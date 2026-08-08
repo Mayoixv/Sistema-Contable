@@ -112,6 +112,34 @@ OpenAPI quedan como alternativas (OR), no como requisitos simultáneos.
 
 Al recargar `/docs` la autorización se pierde y hay que repetirla.
 
+### Roles y permisos
+
+Tres roles (`Usuario.rol`):
+
+| Rol | Puede |
+|---|---|
+| `admin` | todo, incluido crear usuarios y fijarles el rol |
+| `contador` | crear/modificar cuentas y cargar/reversar asientos |
+| `lector` | solo consultar (listados y reportes) |
+
+`POST /auth/registrar` es **público solo mientras no exista ningún
+usuario**: esa primera alta crea el `admin` inicial (ignorando el `rol` que
+se haya pedido — si el primero pudiera ser `lector`, el sistema quedaría
+sin administración y sin forma de recuperarla). A partir de ahí el alta
+exige un admin autenticado, que sí elige el rol (`contador` por defecto).
+
+La distinción de códigos importa: **401** es "no iniciaste sesión" y
+**403** es "iniciaste sesión pero tu rol no alcanza" (el detalle dice qué
+rol hace falta y cuál tenés).
+
+> Al persistir enums, SQLAlchemy guarda el **nombre** del miembro
+> (`'ADMIN'`), no su valor (`'admin'`) — igual que `cuentas.tipo`. Una
+> migración que escriba el valor en minúscula inserta filas que el ORM
+> después no puede leer. Como la suite crea el schema con
+> `metadata.create_all` y nunca corre las migraciones, ese error no
+> aparecería en los tests: por eso hay uno que valida los literales de rol
+> de la migración contra el enum.
+
 Notas de diseño:
 
 - El password se hashea con `bcrypt` directo (no `passlib`, para evitar el

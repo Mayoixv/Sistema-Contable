@@ -22,10 +22,12 @@ def test_registrar_y_login(raw_client: TestClient) -> None:
     assert body["access_token"]
 
 
-def test_registrar_email_duplicado_409(raw_client: TestClient) -> None:
+def test_registrar_email_duplicado_409(client: TestClient) -> None:
+    # `client` ya está autenticado como el admin inicial, que es quien
+    # puede dar de alta usuarios una vez que el sistema tiene alguno.
     payload = {"email": "dup@example.com", "nombre": "Dup", "password": "password123"}
-    assert raw_client.post("/api/v1/auth/registrar", json=payload).status_code == 201
-    r = raw_client.post("/api/v1/auth/registrar", json=payload)
+    assert client.post("/api/v1/auth/registrar", json=payload).status_code == 201
+    r = client.post("/api/v1/auth/registrar", json=payload)
     assert r.status_code == 409
 
 
@@ -53,13 +55,13 @@ def test_login_email_no_distingue_mayusculas(raw_client: TestClient) -> None:
 
 
 def test_registrar_mismo_email_en_otra_capitalizacion_es_duplicado(
-    raw_client: TestClient,
+    client: TestClient,
 ) -> None:
     primero = {"email": "dup2@example.com", "nombre": "Uno", "password": "password123"}
-    assert raw_client.post("/api/v1/auth/registrar", json=primero).status_code == 201
+    assert client.post("/api/v1/auth/registrar", json=primero).status_code == 201
 
     segundo = {"email": "DUP2@example.com", "nombre": "Dos", "password": "password123"}
-    assert raw_client.post("/api/v1/auth/registrar", json=segundo).status_code == 409
+    assert client.post("/api/v1/auth/registrar", json=segundo).status_code == 409
 
 
 def test_login_con_nombre_en_vez_de_email_401(raw_client: TestClient) -> None:

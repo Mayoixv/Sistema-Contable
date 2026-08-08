@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app import crud
-from app.api.deps import get_current_user, get_db
+from app.api.deps import get_db, requiere_escritura
 from app.models.asiento import Asiento
 from app.models.usuario import Usuario
 from app.schemas.asiento import AsientoCreate, AsientoListResponse, AsientoRead
@@ -23,7 +23,7 @@ def _obtener_o_404(db: Session, asiento_id: int) -> Asiento:
 def crear_asiento(
     asiento_in: AsientoCreate,
     db: Session = Depends(get_db),
-    usuario: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(requiere_escritura),
 ) -> Asiento:
     try:
         return crud.asiento.create(db, obj_in=asiento_in, usuario=usuario)
@@ -65,7 +65,7 @@ def reversar_asiento(
         default=None, description="Fecha del asiento de reversión; por defecto, hoy"
     ),
     db: Session = Depends(get_db),
-    usuario: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(requiere_escritura),
 ) -> Asiento:
     original = _obtener_o_404(db, asiento_id)
     try:
@@ -77,7 +77,11 @@ def reversar_asiento(
 
 
 @router.delete("/{asiento_id}", status_code=status.HTTP_204_NO_CONTENT)
-def eliminar_asiento(asiento_id: int, db: Session = Depends(get_db)) -> None:
+def eliminar_asiento(
+    asiento_id: int,
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(requiere_escritura),
+) -> None:
     asiento = _obtener_o_404(db, asiento_id)
     try:
         crud.asiento.remove(db, db_obj=asiento)

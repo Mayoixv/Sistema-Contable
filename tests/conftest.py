@@ -77,6 +77,32 @@ def client(raw_client: TestClient) -> TestClient:
 
 
 @pytest.fixture()
+def headers_para(client: TestClient):
+    """Crea un usuario con el rol dado (usando el admin de `client`) y
+    devuelve los headers para autenticarse como él.
+
+    Se devuelven headers en vez de otro TestClient porque httpx da
+    precedencia a los headers de la request sobre los del cliente, así que
+    `client.get(url, headers=headers_para(...))` pega como ese usuario.
+    """
+
+    def _crear(rol: str, email: str | None = None) -> dict[str, str]:
+        email = email or f"{rol}@example.com"
+        password = "password123"
+        r = client.post(
+            "/api/v1/auth/registrar",
+            json={"email": email, "nombre": rol.capitalize(), "password": password, "rol": rol},
+        )
+        assert r.status_code == 201, r.text
+        token = client.post(
+            "/api/v1/auth/login", data={"username": email, "password": password}
+        ).json()["access_token"]
+        return {"Authorization": f"Bearer {token}"}
+
+    return _crear
+
+
+@pytest.fixture()
 def plan_cuentas(db_session: Session) -> dict[str, Cuenta]:
     """Un plan de cuentas mínimo pero completo (activo/pasivo/patrimonio/
     ingreso/costo/gasto), todas cuentas de detalle listas para recibir

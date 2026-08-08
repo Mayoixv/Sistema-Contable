@@ -3,8 +3,9 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app import crud
-from app.api.deps import get_db
+from app.api.deps import get_db, requiere_escritura
 from app.models.cuenta import Cuenta
+from app.models.usuario import Usuario
 from app.schemas.cuenta import CuentaCreate, CuentaRead, CuentaTree, CuentaUpdate
 
 router = APIRouter(prefix="/cuentas", tags=["Plan de cuentas"])
@@ -18,7 +19,11 @@ def _obtener_o_404(db: Session, cuenta_id: int) -> Cuenta:
 
 
 @router.post("/", response_model=CuentaRead, status_code=status.HTTP_201_CREATED)
-def crear_cuenta(cuenta_in: CuentaCreate, db: Session = Depends(get_db)) -> Cuenta:
+def crear_cuenta(
+    cuenta_in: CuentaCreate,
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(requiere_escritura),
+) -> Cuenta:
     try:
         return crud.cuenta.create(db, obj_in=cuenta_in)
     except crud.cuenta.CuentaNoEncontradaError as exc:
@@ -50,7 +55,10 @@ def obtener_cuenta(cuenta_id: int, db: Session = Depends(get_db)) -> Cuenta:
 
 @router.patch("/{cuenta_id}", response_model=CuentaRead)
 def actualizar_cuenta(
-    cuenta_id: int, cuenta_in: CuentaUpdate, db: Session = Depends(get_db)
+    cuenta_id: int,
+    cuenta_in: CuentaUpdate,
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(requiere_escritura),
 ) -> Cuenta:
     cuenta = _obtener_o_404(db, cuenta_id)
     try:
@@ -64,7 +72,11 @@ def actualizar_cuenta(
 
 
 @router.delete("/{cuenta_id}", status_code=status.HTTP_204_NO_CONTENT)
-def eliminar_cuenta(cuenta_id: int, db: Session = Depends(get_db)) -> None:
+def eliminar_cuenta(
+    cuenta_id: int,
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(requiere_escritura),
+) -> None:
     cuenta = _obtener_o_404(db, cuenta_id)
     try:
         crud.cuenta.remove(db, db_obj=cuenta)
