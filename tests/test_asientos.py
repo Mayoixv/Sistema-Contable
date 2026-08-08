@@ -4,6 +4,7 @@ from decimal import Decimal
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app import crud
@@ -203,6 +204,49 @@ def _crear(client: TestClient, fecha: str, debito_id: int, credito_id: int, mont
     r = client.post("/api/v1/asientos/", json=payload)
     assert r.status_code == 201
     return r.json()
+
+
+def test_asiento_registra_el_usuario_que_lo_creo(
+    client: TestClient, plan_cuentas: dict[str, Cuenta]
+) -> None:
+    from tests.conftest import TEST_USER_EMAIL
+
+    asiento = _crear(client, "2026-01-01", plan_cuentas["caja"].id, plan_cuentas["capital"].id)
+    assert asiento["usuario_id"] is not None
+    assert asiento["usuario_email"] == TEST_USER_EMAIL
+
+    # También al leerlo de vuelta, no solo en la respuesta del POST.
+    leido = client.get(f"/api/v1/asientos/{asiento['id']}").json()
+    assert leido["usuario_email"] == TEST_USER_EMAIL
+
+
+def test_reversion_registra_al_usuario_que_reversa(
+    client: TestClient, plan_cuentas: dict[str, Cuenta]
+) -> None:
+    from tests.conftest import TEST_USER_EMAIL
+
+    original = _crear(client, "2026-01-01", plan_cuentas["caja"].id, plan_cuentas["capital"].id)
+    reversion = client.post(f"/api/v1/asientos/{original['id']}/reversar").json()
+
+    assert reversion["usuario_email"] == TEST_USER_EMAIL
+
+
+def test_no_se_puede_borrar_usuario_con_asientos(
+    client: TestClient, db_session: Session, plan_cuentas: dict[str, Cuenta]
+) -> None:
+    from sqlalchemy.exc import IntegrityError
+
+    from app.models.usuario import Usuario
+    from tests.conftest import TEST_USER_EMAIL
+
+    _crear(client, "2026-01-01", plan_cuentas["caja"].id, plan_cuentas["capital"].id)
+
+    usuario = db_session.scalar(select(Usuario).where(Usuario.email == TEST_USER_EMAIL))
+    db_session.delete(usuario)
+    # El FK es RESTRICT: borrar al autor rompería la trazabilidad del asiento.
+    with pytest.raises(IntegrityError):
+        db_session.commit()
+    db_session.rollback()
 
 
 def test_listar_asientos_respuesta_paginada(

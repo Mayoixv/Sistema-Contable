@@ -44,6 +44,14 @@ class Asiento(Base):
         ForeignKey("asientos.id", ondelete="SET NULL"), nullable=True, index=True
     )
 
+    # Quién cargó el asiento. Es nullable porque los asientos creados antes
+    # de que existiera la autenticación no tienen autor conocido; para los
+    # nuevos siempre se completa. RESTRICT: no se borra un usuario que dejó
+    # asientos, o se perdería la trazabilidad de quién los hizo.
+    usuario_id: Mapped[int | None] = mapped_column(
+        ForeignKey("usuarios.id", ondelete="RESTRICT"), nullable=True, index=True
+    )
+
     # Las líneas pertenecen por completo al asiento: se crean, leen y borran
     # junto con él (no existe edición de una línea suelta).
     movimientos: Mapped[list["MovimientoContable"]] = relationship(
@@ -56,10 +64,15 @@ class Asiento(Base):
         "Asiento", remote_side=[id], back_populates="reversiones"
     )
     reversiones: Mapped[list["Asiento"]] = relationship("Asiento", back_populates="reversa_de")
+    usuario: Mapped["Usuario | None"] = relationship("Usuario", back_populates="asientos")
 
     @property
     def reversado_por_id(self) -> int | None:
         return self.reversiones[0].id if self.reversiones else None
+
+    @property
+    def usuario_email(self) -> str | None:
+        return self.usuario.email if self.usuario else None
 
     def __repr__(self) -> str:
         return f"<Asiento #{self.numero} {self.fecha}>"

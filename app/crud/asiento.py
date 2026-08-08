@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.models.asiento import Asiento, MovimientoContable
 from app.models.cuenta import Cuenta
+from app.models.usuario import Usuario
 from app.schemas.asiento import AsientoCreate
 
 
@@ -24,7 +25,11 @@ def get(db: Session, asiento_id: int) -> Asiento | None:
     stmt = (
         select(Asiento)
         .where(Asiento.id == asiento_id)
-        .options(selectinload(Asiento.movimientos), selectinload(Asiento.reversiones))
+        .options(
+            selectinload(Asiento.movimientos),
+            selectinload(Asiento.reversiones),
+            selectinload(Asiento.usuario),
+        )
     )
     return db.scalar(stmt)
 
@@ -56,7 +61,11 @@ def get_multi(
 ) -> list[Asiento]:
     stmt = (
         select(Asiento)
-        .options(selectinload(Asiento.movimientos), selectinload(Asiento.reversiones))
+        .options(
+            selectinload(Asiento.movimientos),
+            selectinload(Asiento.reversiones),
+            selectinload(Asiento.usuario),
+        )
         .order_by(Asiento.numero.desc())
     )
     stmt = _aplicar_filtros(
@@ -102,13 +111,14 @@ def _validar_cuentas(db: Session, cuenta_ids: set[int]) -> None:
             raise CuentaInvalidaError(f"La cuenta '{cuenta.codigo}' está inactiva")
 
 
-def create(db: Session, *, obj_in: AsientoCreate) -> Asiento:
+def create(db: Session, *, obj_in: AsientoCreate, usuario: Usuario | None = None) -> Asiento:
     _validar_cuentas(db, {m.cuenta_id for m in obj_in.movimientos})
 
     db_obj = Asiento(
         numero=_siguiente_numero(db),
         fecha=obj_in.fecha,
         descripcion=obj_in.descripcion,
+        usuario_id=usuario.id if usuario else None,
         movimientos=[
             MovimientoContable(
                 cuenta_id=m.cuenta_id,
@@ -125,7 +135,13 @@ def create(db: Session, *, obj_in: AsientoCreate) -> Asiento:
     return db_obj
 
 
-def reversar(db: Session, *, original: Asiento, fecha: date | None = None) -> Asiento:
+def reversar(
+    db: Session,
+    *,
+    original: Asiento,
+    fecha: date | None = None,
+    usuario: Usuario | None = None,
+) -> Asiento:
     if original.reversiones:
         reversion_previa = original.reversiones[0]
         raise AsientoYaReversadoError(
@@ -140,6 +156,7 @@ def reversar(db: Session, *, original: Asiento, fecha: date | None = None) -> As
         fecha=fecha or date.today(),
         descripcion=f"Reversión del asiento #{original.numero}: {original.descripcion}",
         reversa_de_id=original.id,
+        usuario_id=usuario.id if usuario else None,
         movimientos=[
             MovimientoContable(
                 cuenta_id=m.cuenta_id,

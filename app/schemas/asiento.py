@@ -33,6 +33,8 @@ class AsientoRead(BaseModel):
     created_at: datetime
     reversa_de_id: int | None
     reversado_por_id: int | None
+    usuario_id: int | None
+    usuario_email: str | None
     movimientos: list[MovimientoRead]
 
 

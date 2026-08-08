@@ -185,6 +185,23 @@ vía `Asiento.movimientos.any(...)`). Devuelve un objeto paginado:
 `total` se calcula con un `COUNT` aparte (mismos filtros, sin `LIMIT`) para
 que el cliente sepa cuántas páginas hay sin traer todos los registros.
 
+### Auditoría: quién cargó cada asiento
+
+Cada asiento guarda el usuario autenticado que lo creó (`usuario_id`), y
+`AsientoRead` lo expone junto con `usuario_email` para no tener que
+resolver el id aparte. Aplica igual a las reversiones: queda registrado
+quién reversó, que suele ser más interesante que quién cargó el original.
+
+El campo es **nullable** a propósito: los asientos cargados antes de que
+existiera la autenticación no tienen autor y no se puede inventar uno.
+
+El FK es `ON DELETE RESTRICT`, y la relación `Usuario.asientos` usa
+`passive_deletes="all"`. Sin eso, SQLAlchemy "ayuda" poniendo
+`usuario_id=NULL` en los asientos al borrar un usuario, y el borrado
+parece funcionar mientras destruye la trazabilidad en silencio; con
+`passive_deletes` no toca las hijas y deja que la restricción de la base
+rechace el borrado.
+
 ### Reversión de asientos
 
 `POST /api/v1/asientos/{id}/reversar?fecha=YYYY-MM-DD` (fecha opcional,

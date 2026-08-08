@@ -4,8 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app import crud
-from app.api.deps import get_db
+from app.api.deps import get_current_user, get_db
 from app.models.asiento import Asiento
+from app.models.usuario import Usuario
 from app.schemas.asiento import AsientoCreate, AsientoListResponse, AsientoRead
 
 router = APIRouter(prefix="/asientos", tags=["Asientos contables"])
@@ -19,9 +20,13 @@ def _obtener_o_404(db: Session, asiento_id: int) -> Asiento:
 
 
 @router.post("/", response_model=AsientoRead, status_code=status.HTTP_201_CREATED)
-def crear_asiento(asiento_in: AsientoCreate, db: Session = Depends(get_db)) -> Asiento:
+def crear_asiento(
+    asiento_in: AsientoCreate,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
+) -> Asiento:
     try:
-        return crud.asiento.create(db, obj_in=asiento_in)
+        return crud.asiento.create(db, obj_in=asiento_in, usuario=usuario)
     except crud.asiento.CuentaInvalidaError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
@@ -60,10 +65,11 @@ def reversar_asiento(
         default=None, description="Fecha del asiento de reversión; por defecto, hoy"
     ),
     db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
 ) -> Asiento:
     original = _obtener_o_404(db, asiento_id)
     try:
-        return crud.asiento.reversar(db, original=original, fecha=fecha)
+        return crud.asiento.reversar(db, original=original, fecha=fecha, usuario=usuario)
     except crud.asiento.AsientoYaReversadoError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
     except crud.asiento.CuentaInvalidaError as exc:
