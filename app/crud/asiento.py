@@ -89,7 +89,7 @@ def count(
     return db.scalar(stmt) or 0
 
 
-def _siguiente_numero(db: Session) -> int:
+def siguiente_numero(db: Session) -> int:
     # NOTA: bajo escrituras concurrentes esto puede colisionar (el
     # UniqueConstraint de "numero" haría fallar la transacción en ese caso);
     # para alta concurrencia conviene una secuencia de BD o SELECT ... FOR UPDATE.
@@ -115,7 +115,7 @@ def create(db: Session, *, obj_in: AsientoCreate, usuario: Usuario | None = None
     _validar_cuentas(db, {m.cuenta_id for m in obj_in.movimientos})
 
     db_obj = Asiento(
-        numero=_siguiente_numero(db),
+        numero=siguiente_numero(db),
         fecha=obj_in.fecha,
         descripcion=obj_in.descripcion,
         usuario_id=usuario.id if usuario else None,
@@ -152,7 +152,7 @@ def reversar(
     _validar_cuentas(db, {m.cuenta_id for m in original.movimientos})
 
     db_obj = Asiento(
-        numero=_siguiente_numero(db),
+        numero=siguiente_numero(db),
         fecha=fecha or date.today(),
         descripcion=f"Reversión del asiento #{original.numero}: {original.descripcion}",
         reversa_de_id=original.id,

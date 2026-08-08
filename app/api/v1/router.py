@@ -6,6 +6,7 @@ from app.api.v1.endpoints import (
     auth,
     balance_comprobacion,
     balance_general,
+    cierres,
     cuentas,
     estado_resultados,
     libro_mayor,
@@ -22,3 +23,4 @@ api_router.include_router(libro_mayor.router, dependencies=_requiere_login)
 api_router.include_router(balance_comprobacion.router, dependencies=_requiere_login)
 api_router.include_router(estado_resultados.router, dependencies=_requiere_login)
 api_router.include_router(balance_general.router, dependencies=_requiere_login)
+api_router.include_router(cierres.router, dependencies=_requiere_login)

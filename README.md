@@ -6,26 +6,31 @@ API de contabilidad con FastAPI + PostgreSQL + SQLAlchemy + Alembic.
 
 ```
 app/
-  core/config.py          # Settings (lee .env)
+  core/
+    config.py               # Settings (lee .env)
+    security.py             # Hash de passwords (bcrypt) y JWT
   db/
-    base_class.py          # Base declarativa
+    base_class.py           # Base declarativa
     base.py                 # Importa todos los modelos (para Alembic)
     session.py              # engine, SessionLocal, get_db
   models/
     cuenta.py               # Cuenta (plan de cuentas jerárquico)
-    asiento.py               # Asiento + MovimientoContable (partida doble)
-  schemas/
-    cuenta.py                # Create/Update/Read/Tree
-    asiento.py, movimiento.py  # Create (con validación de balance)/Read
-    libro_mayor.py            # Respuesta del libro mayor
+    asiento.py              # Asiento + MovimientoContable (partida doble)
+    usuario.py              # Usuario + RolUsuario
+    cierre.py               # Cierre de ejercicio
+  schemas/                  # Un módulo por recurso/reporte
   crud/
-    cuenta.py, asiento.py, libro_mayor.py
-  api/v1/endpoints/
-    cuentas.py, asientos.py, libro_mayor.py
+    cuenta.py, asiento.py, usuario.py, cierre.py
+    agregados.py            # Consulta agregada compartida por los reportes
+    libro_mayor.py, balance_comprobacion.py
+    estado_resultados.py, balance_general.py
+  api/
+    deps.py                 # get_db, get_current_user, requiere_rol
+    v1/endpoints/           # Un router por recurso/reporte
+  utils/csv_export.py       # Exportación de reportes a CSV
   main.py                   # App FastAPI
-alembic/                    # Migraciones (env.py conectado a app.core.config)
-  versions/0001_create_cuentas.py
-  versions/0002_create_asientos.py
+alembic/versions/           # 0001..0007 (migraciones escritas a mano)
+tests/                      # Suite pytest (SQLite en memoria)
 ```
 
 ## Puesta en marcha
@@ -320,6 +325,54 @@ total_patrimonio = suma(cuentas de patrimonio) + resultado_acumulado
 balanceado = total_activo == total_pasivo + total_patrimonio
 ```
 
+## Cierre de ejercicio
+
+`POST /api/v1/cierres/` (solo admin) — `{"fecha_cierre", "cuenta_resultado_id"}`
+`GET /api/v1/cierres/` — historial de cierres
+
+Genera un asiento que salda las cuentas de ingreso, costo y gasto contra una
+cuenta de **patrimonio** (la que se indique en `cuenta_resultado_id`), y
+registra el cierre en la tabla `cierres` con el asiento generado, el autor y
+la utilidad resultante. Se guarda el asiento en vez de recalcularlo para que
+quede auditable exactamente qué se cerró y por cuánto.
+
+Reglas: la cuenta de resultado debe ser de patrimonio, activa y de detalle
+(`400`); no se puede cerrar dos veces la misma fecha ni con una fecha
+anterior al último cierre (`409`); y si no hay saldos nominales pendientes,
+`400`.
+
+Cada cierre toma el saldo de las cuentas nominales **incluyendo los cierres
+anteriores**. Como el cierre previo las dejó en cero, el neto que queda es
+solo la actividad posterior — no hace falta llevar la cuenta de "desde
+cuándo" cerrar.
+
+### El detalle que hace que los reportes sigan siendo correctos
+
+El asiento de cierre lleva `es_cierre=True`, y los dos reportes que tocan
+cuentas nominales lo tratan **al revés** a propósito:
+
+- **Estado de resultados: lo excluye.** El asiento de cierre es un artificio
+  para saldar cuentas, no actividad del negocio. Si se contara, un ejercicio
+  ya cerrado mostraría ingresos y gastos en cero, que es exactamente lo que
+  no se quiere de un reporte histórico.
+- **Balance general: lo incluye.** Después del cierre la utilidad vive en la
+  cuenta de patrimonio; si además se la sumara como `resultado_acumulado`
+  (que se calcula en vivo desde las nominales), se contaría **dos veces** y
+  el balance dejaría de cuadrar. Al incluir el asiento de cierre, las
+  nominales netean cero, `resultado_acumulado` queda en 0 y la utilidad se
+  cuenta una sola vez.
+
+Por eso `sumar_por_cuenta` y `get_estado_resultados` toman
+`incluir_cierres`, y `balance_general` es el único que lo pasa en `True`.
+Hay tests que fijan justamente esto: que después de cerrar, el balance
+general siga cuadrando y el estado de resultados siga mostrando la
+actividad real del período.
+
+> Caso borde cubierto: si la utilidad da exactamente cero no se agrega la
+> línea de resultado (sería un movimiento de 0/0 y violaría el `CHECK` que
+> exige débito o crédito mayor a cero). El asiento igual balancea, porque
+> las líneas que saldan las nominales ya suman cero entre sí.
+
 `agregados.py` centraliza el signo por naturaleza y la consulta agregada
 por cuenta (`GROUP BY`) que usan `balance_comprobacion`, `estado_resultados`
 y `balance_general` — se extrajo cuando el mismo cálculo se empezó a repetir
@@ -387,3 +440,14 @@ Cobertura por módulo:
   capital, deuda con proveedor, venta con su costo y un gasto) donde
   `total_activo == total_pasivo + total_patrimonio` gracias al
   `resultado_acumulado`, verificado además contra `estado_resultados`.
+- `test_auth.py` — registro/login, email insensible a mayúsculas, y los dos
+  esquemas de autorización de `/docs`.
+- `test_roles.py` — el primer usuario es admin (aunque pida otro rol), el
+  registro se cierra después, y qué puede hacer cada rol. Incluye el test
+  que valida los literales de enum de la migración, que la suite no
+  ejecutaría de otro modo.
+- `test_cierre.py` — el escenario contable más completo: que el balance
+  general siga cuadrando después de cerrar, que el estado de resultados
+  siga mostrando la actividad del período cerrado, que un segundo cierre
+  tome solo lo posterior, y los casos de pérdida y de utilidad exactamente
+  cero.

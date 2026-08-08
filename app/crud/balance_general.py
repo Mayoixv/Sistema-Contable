@@ -44,13 +44,18 @@ def get_balance_general(db: Session, *, fecha_corte: date | None = None) -> dict
     pasivos, total_pasivo = _filas_por_tipo(cuentas, sumas, TipoCuenta.PASIVO)
     patrimonio, total_patrimonio_cuentas = _filas_por_tipo(cuentas, sumas, TipoCuenta.PATRIMONIO)
 
-    # Sin asientos de cierre de ejercicio, el resultado de las cuentas
-    # nominales (ingreso/costo/gasto) acumulado desde el inicio hasta la
-    # fecha de corte no está reflejado en ninguna cuenta real: hay que
-    # sumarlo al patrimonio para que Activo = Pasivo + Patrimonio cuadre.
-    resultado_acumulado = get_estado_resultados(db, fecha_desde=None, fecha_hasta=fecha_corte)[
-        "utilidad_neta"
-    ]
+    # El resultado de las cuentas nominales (ingreso/costo/gasto) que todavía
+    # NO fue cerrado no está reflejado en ninguna cuenta real: hay que sumarlo
+    # al patrimonio para que Activo = Pasivo + Patrimonio cuadre.
+    #
+    # `incluir_cierres=True` es lo que hace que esto siga siendo correcto
+    # después de un cierre de ejercicio: el asiento de cierre salda las
+    # cuentas nominales contra patrimonio, así que al incluirlo el neto da
+    # cero y la utilidad queda contada una sola vez (en la cuenta de
+    # patrimonio). Si se excluyera, se contaría dos veces.
+    resultado_acumulado = get_estado_resultados(
+        db, fecha_desde=None, fecha_hasta=fecha_corte, incluir_cierres=True
+    )["utilidad_neta"]
     total_patrimonio = sin_cero_negativo(total_patrimonio_cuentas + resultado_acumulado)
     total_pasivo_mas_patrimonio = sin_cero_negativo(total_pasivo + total_patrimonio)
 

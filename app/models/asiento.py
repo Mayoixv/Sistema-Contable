@@ -2,6 +2,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     Date,
     DateTime,
@@ -12,6 +13,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -50,6 +52,15 @@ class Asiento(Base):
     # asientos, o se perdería la trazabilidad de quién los hizo.
     usuario_id: Mapped[int | None] = mapped_column(
         ForeignKey("usuarios.id", ondelete="RESTRICT"), nullable=True, index=True
+    )
+
+    # Marca los asientos generados por un cierre de ejercicio. Los reportes
+    # los tratan distinto: el estado de resultados los EXCLUYE (si no, el
+    # período cerrado mostraría ingresos en cero), mientras que el balance
+    # general los INCLUYE al calcular el resultado acumulado (si no, contaría
+    # dos veces la utilidad: una en la cuenta de patrimonio y otra en vivo).
+    es_cierre: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=text("false")
     )
 
     # Las líneas pertenecen por completo al asiento: se crean, leen y borran

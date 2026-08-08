@@ -3,6 +3,7 @@ from app.crud import (  # noqa: F401
     asiento,
     balance_comprobacion,
     balance_general,
+    cierre,
     cuenta,
     estado_resultados,
     libro_mayor,

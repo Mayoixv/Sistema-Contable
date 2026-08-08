@@ -30,8 +30,19 @@ def _filas_por_tipo(
 
 
 def get_estado_resultados(
-    db: Session, *, fecha_desde: date | None = None, fecha_hasta: date | None = None
+    db: Session,
+    *,
+    fecha_desde: date | None = None,
+    fecha_hasta: date | None = None,
+    incluir_cierres: bool = False,
 ) -> dict:
+    """Estado de resultados del período.
+
+    Por defecto ignora los asientos de cierre: son un artificio contable
+    para saldar las cuentas nominales, no actividad del negocio, y si se
+    contaran un ejercicio ya cerrado mostraría todo en cero. `balance_general`
+    lo llama con `incluir_cierres=True` por el motivo contrario.
+    """
     cuentas = list(
         db.scalars(
             select(Cuenta)
@@ -44,7 +55,11 @@ def get_estado_resultados(
         )
     )
     sumas = sumar_por_cuenta(
-        db, cuenta_ids={c.id for c in cuentas}, desde=fecha_desde, hasta=fecha_hasta
+        db,
+        cuenta_ids={c.id for c in cuentas},
+        desde=fecha_desde,
+        hasta=fecha_hasta,
+        incluir_cierres=incluir_cierres,
     )
 
     ingresos, total_ingresos = _filas_por_tipo(cuentas, sumas, TipoCuenta.INGRESO)

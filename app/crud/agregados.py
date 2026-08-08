@@ -27,8 +27,16 @@ def sumar_por_cuenta(
     desde: date | None = None,
     hasta: date | None = None,
     hasta_exclusive: bool = False,
+    incluir_cierres: bool = True,
 ) -> dict[int, tuple[Decimal, Decimal]]:
-    """Suma débito/crédito agrupado por cuenta_id, en el rango de fechas dado."""
+    """Suma débito/crédito agrupado por cuenta_id, en el rango de fechas dado.
+
+    `incluir_cierres=False` deja fuera los asientos de cierre de ejercicio.
+    Lo necesita el estado de resultados: el asiento de cierre salda las
+    cuentas nominales, así que incluirlo haría que un período ya cerrado
+    reportara ingresos y gastos en cero. El balance general, en cambio, los
+    necesita incluidos (ver `balance_general.py`).
+    """
     stmt = (
         select(
             MovimientoContable.cuenta_id,
@@ -38,6 +46,8 @@ def sumar_por_cuenta(
         .join(Asiento, Asiento.id == MovimientoContable.asiento_id)
         .group_by(MovimientoContable.cuenta_id)
     )
+    if not incluir_cierres:
+        stmt = stmt.where(Asiento.es_cierre.is_(False))
     if cuenta_ids is not None:
         stmt = stmt.where(MovimientoContable.cuenta_id.in_(cuenta_ids))
     if desde is not None:
