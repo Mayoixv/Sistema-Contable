@@ -10,8 +10,15 @@ class EmailYaRegistradoError(Exception):
     pass
 
 
+def _normalizar_email(email: str) -> str:
+    # Los emails se guardan y se buscan siempre en minúsculas: si no,
+    # registrarse como "Juan@x.com" e intentar entrar con "juan@x.com"
+    # da 401, que es un fallo muy confuso para el usuario.
+    return email.strip().lower()
+
+
 def get_by_email(db: Session, email: str) -> Usuario | None:
-    return db.scalar(select(Usuario).where(Usuario.email == email))
+    return db.scalar(select(Usuario).where(Usuario.email == _normalizar_email(email)))
 
 
 def create(db: Session, *, obj_in: UsuarioCreate) -> Usuario:
@@ -19,7 +26,7 @@ def create(db: Session, *, obj_in: UsuarioCreate) -> Usuario:
         raise EmailYaRegistradoError(f"Ya existe un usuario con el email '{obj_in.email}'")
 
     db_obj = Usuario(
-        email=obj_in.email,
+        email=_normalizar_email(obj_in.email),
         nombre=obj_in.nombre,
         hashed_password=hash_password(obj_in.password),
     )

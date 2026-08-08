@@ -88,12 +88,21 @@ JSON, y el campo se llama `username` aunque en este sistema es el email) —
 es el estándar que además hace que el botón "Authorize" de `/docs`
 funcione solo, sin tener que pegar el token a mano.
 
+> **En `username` va el email, no el nombre del usuario.** Es la confusión
+> más fácil de cometer al probar desde `/docs`, y el síntoma es un `401`
+> idéntico al de contraseña incorrecta. El `summary` del endpoint lo aclara
+> en la documentación interactiva.
+
 Notas de diseño:
 
 - El password se hashea con `bcrypt` directo (no `passlib`, para evitar el
   problema conocido de incompatibilidad entre `passlib` y `bcrypt>=4`). El
   límite de 72 bytes de bcrypt se refleja en `UsuarioCreate.password`
   (`max_length=72`).
+- El email se normaliza a minúsculas (`_normalizar_email` en
+  `crud/usuario.py`) tanto al registrar como al buscar, así el login no
+  distingue mayúsculas y `DUP@x.com` se detecta como duplicado de
+  `dup@x.com` en lugar de crear dos cuentas distintas.
 - El JWT se firma con `SECRET_KEY` (HS256, expira a las
   `ACCESS_TOKEN_EXPIRE_MINUTES`, por defecto 8 horas) — **el valor por
   defecto en `config.py` es solo para desarrollo**; en producción hay que

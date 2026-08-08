@@ -19,7 +19,16 @@ def registrar_usuario(usuario_in: UsuarioCreate, db: Session = Depends(get_db)) 
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
 
 
-@router.post("/login", response_model=Token)
+@router.post(
+    "/login",
+    response_model=Token,
+    summary="Iniciar sesión (en 'username' va el EMAIL)",
+    description=(
+        "El campo se llama `username` porque lo exige el estándar OAuth2, "
+        "pero hay que enviar el **email** con el que se registró el usuario "
+        "(no el nombre). No distingue mayúsculas de minúsculas."
+    ),
+)
 def login(
     form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
 ) -> dict:
