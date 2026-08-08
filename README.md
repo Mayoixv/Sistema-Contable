@@ -78,6 +78,54 @@ uvicorn app.main:app --reload
 
 Docs interactivas: `http://localhost:8000/docs`
 
+## Interfaz web (`frontend/`)
+
+React + Vite. En desarrollo son dos procesos: la API en `8001` y el front en
+`5173`.
+
+```bash
+cd frontend
+npm install
+npm run dev     # http://localhost:5173
+```
+
+**No hace falta configurar CORS.** El dev server de Vite proxea `/api` y
+`/health` al backend (ver `vite.config.js`), así que el navegador ve un solo
+origen; y en producción FastAPI sirve el bundle ya compilado, con lo cual
+tampoco hay cruce de orígenes. Es un ajuste de tres líneas que evita tener
+que abrir la API a otro dominio.
+
+Estructura:
+
+```
+frontend/src/
+  api/client.js        # fetch con el token + traducción de errores del backend
+  auth/AuthContext.jsx # sesión (token en localStorage), rol del usuario
+  pages/               # Login, PlanCuentas, LibroMayor
+  formato.js           # formateo de montos
+```
+
+Detalles de diseño:
+
+- El token va en `localStorage`. Es lo habitual en una SPA y encaja con el
+  JWT que ya expone la API, pero conviene saber que es vulnerable a XSS: una
+  cookie `HttpOnly` sería más segura, a cambio de tener que agregar
+  autenticación por cookie en el backend (hoy solo entiende el header
+  `Authorization`).
+- El 401 se maneja en un solo lugar (`onSesionExpirada` en el cliente): si el
+  token venció, se cierra la sesión sin que cada pantalla tenga que
+  ocuparse.
+- Los montos llegan como string (`Decimal` serializado) para no perder
+  precisión, y se convierten a número **solo para mostrarlos**.
+- La UI oculta las acciones de escritura si el rol no alcanza, pero eso es
+  comodidad, no seguridad: quien manda la petición igual choca con el `403`
+  del backend.
+
+Pantallas hechas: login, plan de cuentas (árbol, con alta de cuentas) y
+libro mayor con filtros por fecha y descarga CSV. Faltan carga de asientos,
+el resto de los reportes y el cierre de ejercicio, que por ahora se siguen
+usando desde `/docs`.
+
 ## Autenticación
 
 Toda la API bajo `/api/v1` exige un JWT, salvo `/api/v1/auth/*` y `/health`.
