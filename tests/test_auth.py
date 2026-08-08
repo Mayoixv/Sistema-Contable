@@ -99,3 +99,32 @@ def test_me_devuelve_usuario_autenticado(client: TestClient) -> None:
 
 def test_health_no_requiere_auth(raw_client: TestClient) -> None:
     assert raw_client.get("/health").status_code == 200
+
+
+def test_token_pegado_a_mano_funciona(raw_client: TestClient) -> None:
+    # Equivale a usar el esquema HTTPBearer del botón "Authorize" (pegar un
+    # token ya obtenido) en vez del flujo de email+contraseña.
+    raw_client.post(
+        "/api/v1/auth/registrar",
+        json={"email": "pegado@example.com", "nombre": "Pegado", "password": "password123"},
+    )
+    token = raw_client.post(
+        "/api/v1/auth/login",
+        data={"username": "pegado@example.com", "password": "password123"},
+    ).json()["access_token"]
+
+    r = raw_client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
+    assert r.status_code == 200
+    assert r.json()["email"] == "pegado@example.com"
+
+
+def test_docs_ofrece_ambos_esquemas_de_autorizacion(raw_client: TestClient) -> None:
+    spec = raw_client.get("/openapi.json").json()
+    esquemas = spec["components"]["securitySchemes"]
+    assert "OAuth2PasswordBearer" in esquemas
+    assert "HTTPBearer" in esquemas
+
+    # Un endpoint protegido debe aceptar cualquiera de los dos (OR, no AND).
+    seguridad = spec["paths"]["/api/v1/cuentas/"]["get"]["security"]
+    assert {"OAuth2PasswordBearer": []} in seguridad
+    assert {"HTTPBearer": []} in seguridad

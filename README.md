@@ -93,6 +93,25 @@ funcione solo, sin tener que pegar el token a mano.
 > idéntico al de contraseña incorrecta. El `summary` del endpoint lo aclara
 > en la documentación interactiva.
 
+### Probar desde `/docs`
+
+Hacer "Try it out" sobre `POST /auth/login` **no** deja logueada la sesión
+de Swagger: solo muestra el token. Para que el resto de los endpoints
+funcionen hay que usar el botón verde **Authorize**, que ofrece dos formas
+(cualquiera sirve, son el mismo header `Authorization: Bearer <token>`):
+
+- **OAuth2PasswordBearer** — email + contraseña; Swagger hace el login y
+  guarda el token solo.
+- **HTTPBearer** — pegar directamente un token ya obtenido (por ejemplo el
+  que devuelve `curl`), sin re-tipear credenciales.
+
+Ambos esquemas se declaran en `app/api/deps.py` con `auto_error=False`, de
+modo que fallar uno no corta la petición si el otro la resolvió; el `401`
+lo emite `get_current_user` cuando no llegó token por ninguna vía. En el
+OpenAPI quedan como alternativas (OR), no como requisitos simultáneos.
+
+Al recargar `/docs` la autorización se pierde y hay que repetirla.
+
 Notas de diseño:
 
 - El password se hashea con `bcrypt` directo (no `passlib`, para evitar el
