@@ -30,6 +30,36 @@ alembic/                    # Migraciones (env.py conectado a app.core.config)
 
 ## Puesta en marcha
 
+### Opción A: Docker Compose (recomendado)
+
+```bash
+docker compose up -d --build
+```
+
+Levanta Postgres 16 y la API en un solo paso: `db` espera a pasar su
+healthcheck (`pg_isready`) antes de que arranque `api`, y el contenedor de
+la API corre `alembic upgrade head` automáticamente antes de `uvicorn` (ver
+`Dockerfile`, `CMD`) — no hace falta crear la base ni migrar a mano.
+
+- API: `http://localhost:8001` (docs en `/docs`)
+- Postgres: `localhost:5433` (puertos 8000/5432 quedan libres para no
+  chocar con otros proyectos locales)
+- Los datos persisten en el volumen nombrado `contable_pgdata` entre
+  reinicios; `docker compose down -v` si además querés borrarlos.
+- `SECRET_KEY` se puede sobreescribir exportándola antes del `up`
+  (`export SECRET_KEY=...`) — si no, usa el default de desarrollo.
+
+Para logs: `docker compose logs -f api`. Para bajar todo: `docker compose down`.
+
+> Si ya tenías un Postgres corriendo a mano en el puerto 5433 (por ejemplo
+> con `docker run --name contable-db ...`, como se hacía antes de tener
+> `docker-compose.yml`), pará ese contenedor primero (`docker stop
+> contable-db`) — si no, `docker compose up` va a fallar al intentar
+> tomar el mismo puerto. Los datos de ese contenedor viejo no se migran
+> solos al volumen de compose.
+
+### Opción B: entorno local (venv + Postgres aparte)
+
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
