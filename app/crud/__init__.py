@@ -6,4 +6,5 @@ from app.crud import (  # noqa: F401
     cuenta,
     estado_resultados,
     libro_mayor,
+    usuario,
 )

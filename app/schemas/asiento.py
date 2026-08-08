@@ -34,3 +34,10 @@ class AsientoRead(BaseModel):
     reversa_de_id: int | None
     reversado_por_id: int | None
     movimientos: list[MovimientoRead]
+
+
+class AsientoListResponse(BaseModel):
+    total: int
+    skip: int
+    limit: int
+    items: list[AsientoRead]

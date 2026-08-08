@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app import crud
 from app.api.deps import get_db
 from app.models.asiento import Asiento
-from app.schemas.asiento import AsientoCreate, AsientoRead
+from app.schemas.asiento import AsientoCreate, AsientoListResponse, AsientoRead
 
 router = APIRouter(prefix="/asientos", tags=["Asientos contables"])
 
@@ -26,11 +26,24 @@ def crear_asiento(asiento_in: AsientoCreate, db: Session = Depends(get_db)) -> A
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
 
-@router.get("/", response_model=list[AsientoRead])
+@router.get("/", response_model=AsientoListResponse)
 def listar_asientos(
-    skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
-) -> list[Asiento]:
-    return crud.asiento.get_multi(db, skip=skip, limit=limit)
+    skip: int = 0,
+    limit: int = Query(default=100, ge=1, le=500),
+    fecha_desde: date | None = Query(default=None),
+    fecha_hasta: date | None = Query(default=None),
+    cuenta_id: int | None = Query(default=None),
+    db: Session = Depends(get_db),
+) -> dict:
+    if fecha_desde is not None and fecha_hasta is not None and fecha_desde > fecha_hasta:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="fecha_desde no puede ser posterior a fecha_hasta",
+        )
+    filtros = {"fecha_desde": fecha_desde, "fecha_hasta": fecha_hasta, "cuenta_id": cuenta_id}
+    items = crud.asiento.get_multi(db, skip=skip, limit=limit, **filtros)
+    total = crud.asiento.count(db, **filtros)
+    return {"total": total, "skip": skip, "limit": limit, "items": items}
 
 
 @router.get("/{asiento_id}", response_model=AsientoRead)

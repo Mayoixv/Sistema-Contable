@@ -29,15 +29,55 @@ def get(db: Session, asiento_id: int) -> Asiento | None:
     return db.scalar(stmt)
 
 
-def get_multi(db: Session, *, skip: int = 0, limit: int = 100) -> list[Asiento]:
+def _aplicar_filtros(
+    stmt,
+    *,
+    fecha_desde: date | None,
+    fecha_hasta: date | None,
+    cuenta_id: int | None,
+):
+    if fecha_desde is not None:
+        stmt = stmt.where(Asiento.fecha >= fecha_desde)
+    if fecha_hasta is not None:
+        stmt = stmt.where(Asiento.fecha <= fecha_hasta)
+    if cuenta_id is not None:
+        stmt = stmt.where(Asiento.movimientos.any(MovimientoContable.cuenta_id == cuenta_id))
+    return stmt
+
+
+def get_multi(
+    db: Session,
+    *,
+    skip: int = 0,
+    limit: int = 100,
+    fecha_desde: date | None = None,
+    fecha_hasta: date | None = None,
+    cuenta_id: int | None = None,
+) -> list[Asiento]:
     stmt = (
         select(Asiento)
         .options(selectinload(Asiento.movimientos), selectinload(Asiento.reversiones))
         .order_by(Asiento.numero.desc())
-        .offset(skip)
-        .limit(limit)
     )
+    stmt = _aplicar_filtros(
+        stmt, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta, cuenta_id=cuenta_id
+    )
+    stmt = stmt.offset(skip).limit(limit)
     return list(db.scalars(stmt))
+
+
+def count(
+    db: Session,
+    *,
+    fecha_desde: date | None = None,
+    fecha_hasta: date | None = None,
+    cuenta_id: int | None = None,
+) -> int:
+    stmt = select(func.count()).select_from(Asiento)
+    stmt = _aplicar_filtros(
+        stmt, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta, cuenta_id=cuenta_id
+    )
+    return db.scalar(stmt) or 0
 
 
 def _siguiente_numero(db: Session) -> int:

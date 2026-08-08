@@ -43,6 +43,38 @@ uvicorn app.main:app --reload
 
 Docs interactivas: `http://localhost:8000/docs`
 
+## Autenticación
+
+Toda la API bajo `/api/v1` exige un JWT, salvo `/api/v1/auth/*` y `/health`.
+
+```
+POST /api/v1/auth/registrar   {"email", "nombre", "password"}   -> 201 UsuarioRead
+POST /api/v1/auth/login       form-urlencoded: username=<email>&password=<password>  -> {"access_token", "token_type"}
+GET  /api/v1/auth/me          (con Authorization: Bearer <token>)  -> UsuarioRead
+```
+
+`/login` usa `OAuth2PasswordRequestForm` (por eso es form-urlencoded y no
+JSON, y el campo se llama `username` aunque en este sistema es el email) —
+es el estándar que además hace que el botón "Authorize" de `/docs`
+funcione solo, sin tener que pegar el token a mano.
+
+Notas de diseño:
+
+- El password se hashea con `bcrypt` directo (no `passlib`, para evitar el
+  problema conocido de incompatibilidad entre `passlib` y `bcrypt>=4`). El
+  límite de 72 bytes de bcrypt se refleja en `UsuarioCreate.password`
+  (`max_length=72`).
+- El JWT se firma con `SECRET_KEY` (HS256, expira a las
+  `ACCESS_TOKEN_EXPIRE_MINUTES`, por defecto 8 horas) — **el valor por
+  defecto en `config.py` es solo para desarrollo**; en producción hay que
+  sobreescribirlo con algo como `openssl rand -hex 32` vía variable de
+  entorno.
+- `/auth/registrar` está abierto (cualquiera puede crear una cuenta) porque
+  el sistema no tiene todavía roles ni un usuario admin que apruebe altas.
+  Para un despliegue real conviene cerrarlo o ponerlo detrás de una
+  invitación — tal cual está, cualquier persona con acceso a la API puede
+  crear un usuario y ver/modificar toda la contabilidad.
+
 ## Modelo: plan de cuentas (`Cuenta`)
 
 Árbol jerárquico auto-referenciado (`padre_id` → `cuentas.id`):
@@ -83,6 +115,17 @@ si no, `400`.
 Endpoints en `/api/v1/asientos`: `POST /`, `GET /`, `GET /{id}`, `DELETE /{id}`
 (borra en cascada sus movimientos, pero rechaza con `409` si el asiento ya
 fue reversado — se perdería la trazabilidad).
+
+`GET /` acepta `skip`, `limit` (máx. 500), `fecha_desde`, `fecha_hasta` y
+`cuenta_id` (asientos que tengan al menos un movimiento sobre esa cuenta,
+vía `Asiento.movimientos.any(...)`). Devuelve un objeto paginado:
+
+```json
+{"total": 42, "skip": 0, "limit": 100, "items": [ ... ]}
+```
+
+`total` se calcula con un `COUNT` aparte (mismos filtros, sin `LIMIT`) para
+que el cliente sepa cuántas páginas hay sin traer todos los registros.
 
 ### Reversión de asientos
 
@@ -178,3 +221,66 @@ balanceado = total_activo == total_pasivo + total_patrimonio
 por cuenta (`GROUP BY`) que usan `balance_comprobacion`, `estado_resultados`
 y `balance_general` — se extrajo cuando el mismo cálculo se empezó a repetir
 en el tercer/cuarto reporte.
+
+## Exportar reportes a CSV
+
+Los cuatro reportes (`libro-mayor`, `balance-comprobacion`,
+`estado-resultados`, `balance-general`) aceptan `?formato=csv` (además de
+sus filtros normales de fecha) y devuelven un archivo descargable
+(`Content-Disposition: attachment`) en vez del JSON de siempre:
+
+```
+GET /api/v1/balance-comprobacion/?formato=csv
+GET /api/v1/estado-resultados/?fecha_desde=2026-01-01&fecha_hasta=2026-01-31&formato=csv
+GET /api/v1/libro-mayor/{cuenta_id}?formato=csv
+```
+
+Se eligió CSV (vía el módulo `csv` de la librería estándar,
+`app/utils/csv_export.py`) en lugar de Excel o PDF: no agrega dependencias
+nuevas, Excel lo abre igual de bien, y evita el riesgo de romperse por
+desactualización de librerías de terceros (ya pasó una vez en este proyecto
+con las versiones de FastAPI/Starlette). Cada reporte de tipo "sección +
+total" (estado de resultados, balance general) se aplana a filas con una
+columna `seccion`, y lleva filas de totales al final.
+
+Estos endpoints declaran `response_model=None` porque devuelven JSON o CSV
+según el parámetro — a cambio, `/docs` no puede mostrar el schema de
+respuesta para ellos.
+
+## Tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+La suite (`tests/`) corre contra SQLite en memoria (no requiere Docker ni
+Postgres levantado) usando un `TestClient` de FastAPI con `get_db`
+sobreescrito por sesión de test — cada test parte de una base vacía.
+`tests/conftest.py::plan_cuentas` arma un plan de cuentas mínimo
+(activo/pasivo/patrimonio/ingreso/costo/gasto) reutilizado por los módulos
+de reportes.
+
+Cobertura por módulo:
+
+- `test_cuentas.py` — jerarquía (una cuenta se vuelve sumaria al ganar una
+  hija), y los bloqueos de borrado (`CuentaConHijasError`,
+  `CuentaConMovimientosError`).
+- `test_asientos.py` — validación de partida doble a nivel de schema
+  (Pydantic), rechazo de cuentas sumarias/inactivas, numeración
+  autoincremental, y el flujo completo de reversión (montos invertidos,
+  enlace `reversa_de_id`/`reversado_por_id`, bloqueo de doble reversión y
+  de borrado de un asiento ya reversado).
+- `test_libro_mayor.py` — saldo corriente línea a línea según naturaleza
+  deudora/acreedora, y `saldo_inicial` calculado a partir de movimientos
+  previos a `fecha_desde`.
+- `test_balance_comprobacion.py` — incluye cuentas de detalle sin
+  movimientos, `balanceado=true` por construcción, y el caso puntual de
+  cero negativo (`sin_cero_negativo`) cuando un saldo se cancela por
+  completo.
+- `test_estado_resultados.py` — cálculo de utilidad bruta/neta y omisión de
+  cuentas nominales sin actividad en el rango.
+- `test_balance_general.py` — un escenario contable completo (aporte de
+  capital, deuda con proveedor, venta con su costo y un gasto) donde
+  `total_activo == total_pasivo + total_patrimonio` gracias al
+  `resultado_acumulado`, verificado además contra `estado_resultados`.
