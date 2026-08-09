@@ -21,6 +21,10 @@ def get_by_email(db: Session, email: str) -> Usuario | None:
     return db.scalar(select(Usuario).where(Usuario.email == _normalizar_email(email)))
 
 
+def get_multi(db: Session) -> list[Usuario]:
+    return list(db.scalars(select(Usuario).order_by(Usuario.email)))
+
+
 def contar(db: Session) -> int:
     return db.scalar(select(func.count()).select_from(Usuario)) or 0
 

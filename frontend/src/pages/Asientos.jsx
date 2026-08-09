@@ -7,6 +7,45 @@ import AsientoNuevo from './AsientoNuevo'
 
 const POR_PAGINA = 20
 
+function PanelReversar({ asiento, onConfirmar, onCancelar }) {
+  // La API acepta la fecha de la reversión: reversar un asiento viejo con la
+  // fecha de hoy movería el efecto a otro período contable, que suele no ser
+  // lo que se quiere.
+  const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 10))
+  const [enviando, setEnviando] = useState(false)
+
+  return (
+    <tr className="fila-detalle">
+      <td colSpan={7}>
+        <form
+          className="panel-reversar"
+          onSubmit={async (e) => {
+            e.preventDefault()
+            setEnviando(true)
+            await onConfirmar(fecha)
+            setEnviando(false)
+          }}
+        >
+          <span>
+            Reversar el asiento <strong>#{asiento.numero}</strong> — se creará uno nuevo con
+            los importes invertidos.
+          </span>
+          <label>
+            Fecha de la reversión
+            <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} required />
+          </label>
+          <button type="submit" disabled={enviando}>
+            {enviando ? 'Reversando…' : 'Confirmar'}
+          </button>
+          <button type="button" className="secundario" onClick={onCancelar}>
+            Cancelar
+          </button>
+        </form>
+      </td>
+    </tr>
+  )
+}
+
 function DetalleAsiento({ asiento, cuentasPorId }) {
   return (
     <tr className="fila-detalle">
@@ -40,6 +79,7 @@ export default function Asientos() {
   const [expandido, setExpandido] = useState(null)
   const [cuentas, setCuentas] = useState([])
   const [accionError, setAccionError] = useState(null)
+  const [reversando, setReversando] = useState(null)
 
   useEffect(() => {
     api.cuentas.listar({ limit: 500 }).then(setCuentas).catch(() => setCuentas([]))
@@ -57,7 +97,7 @@ export default function Asientos() {
   const ultimaPagina = Math.max(0, Math.ceil(total / POR_PAGINA) - 1)
 
   async function accion(fn, confirmacion) {
-    if (!window.confirm(confirmacion)) return
+    if (confirmacion && !window.confirm(confirmacion)) return
     setAccionError(null)
     try {
       await fn()
@@ -65,6 +105,11 @@ export default function Asientos() {
     } catch (err) {
       setAccionError(err.message)
     }
+  }
+
+  async function reversar(asiento, fecha) {
+    await accion(() => api.asientos.reversar(asiento.id, fecha))
+    setReversando(null)
   }
 
   function aplicarFiltros(e) {
@@ -199,10 +244,7 @@ export default function Asientos() {
                               <button
                                 className="enlace"
                                 onClick={() =>
-                                  accion(
-                                    () => api.asientos.reversar(a.id),
-                                    `¿Reversar el asiento #${a.numero}? Se creará un asiento nuevo con los importes invertidos.`,
-                                  )
+                                  setReversando(reversando === a.id ? null : a.id)
                                 }
                               >
                                 Reversar
@@ -222,6 +264,13 @@ export default function Asientos() {
                           )}
                         </td>
                       </tr>
+                      {reversando === a.id && (
+                        <PanelReversar
+                          asiento={a}
+                          onCancelar={() => setReversando(null)}
+                          onConfirmar={(fecha) => reversar(a, fecha)}
+                        />
+                      )}
                       {abierto && (
                         <DetalleAsiento asiento={a} cuentasPorId={cuentasPorId} />
                       )}

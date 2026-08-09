@@ -179,6 +179,20 @@ def test_migracion_de_roles_usa_nombres_de_enum_validos() -> None:
     )
 
 
+def test_listar_usuarios_es_solo_para_admin(client: TestClient, headers_para) -> None:
+    contador = headers_para('contador')
+    lector = headers_para('lector')
+
+    r = client.get('/api/v1/usuarios/')
+    assert r.status_code == 200
+    emails = {u['email'] for u in r.json()}
+    assert {'contador@example.com', 'lector@example.com'} <= emails
+    assert all('hashed_password' not in u for u in r.json())
+
+    assert client.get('/api/v1/usuarios/', headers=contador).status_code == 403
+    assert client.get('/api/v1/usuarios/', headers=lector).status_code == 403
+
+
 def test_sin_token_sigue_siendo_401_no_403(raw_client: TestClient) -> None:
     # Distinguir "no iniciaste sesión" (401) de "no tenés permiso" (403).
     raw_client.post(

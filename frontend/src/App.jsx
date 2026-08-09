@@ -8,6 +8,7 @@ import BalanceComprobacion from './pages/BalanceComprobacion'
 import EstadoResultados from './pages/EstadoResultados'
 import BalanceGeneral from './pages/BalanceGeneral'
 import Cierres from './pages/Cierres'
+import Usuarios from './pages/Usuarios'
 
 const SECCIONES = [
   { to: '/cuentas', texto: 'Plan de cuentas' },
@@ -16,17 +17,19 @@ const SECCIONES = [
   { to: '/estado-resultados', texto: 'Resultados' },
   { to: '/balance-general', texto: 'Balance general' },
   { to: '/cierres', texto: 'Cierres' },
+  { to: '/usuarios', texto: 'Usuarios', soloAdmin: true },
 ]
 
 function Layout({ children }) {
-  const { usuario, logout } = useAuth()
+  const { usuario, logout, esAdmin } = useAuth()
+  const secciones = SECCIONES.filter((s) => !s.soloAdmin || esAdmin)
 
   return (
     <div className="app">
       <header>
         <div className="marca">Sistema Contable</div>
         <nav>
-          {SECCIONES.map((s) => (
+          {secciones.map((s) => (
             <NavLink key={s.to} to={s.to}>
               {s.texto}
             </NavLink>
@@ -66,6 +69,7 @@ export default function App() {
         <Route path="/estado-resultados" element={<EstadoResultados />} />
         <Route path="/balance-general" element={<BalanceGeneral />} />
         <Route path="/cierres" element={<Cierres />} />
+        <Route path="/usuarios" element={<Usuarios />} />
         <Route path="*" element={<Navigate to="/cuentas" replace />} />
       </Routes>
     </Layout>

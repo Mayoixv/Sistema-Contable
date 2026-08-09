@@ -10,6 +10,7 @@ from app.api.v1.endpoints import (
     cuentas,
     estado_resultados,
     libro_mayor,
+    usuarios,
 )
 
 api_router = APIRouter()
@@ -24,3 +25,4 @@ api_router.include_router(balance_comprobacion.router, dependencies=_requiere_lo
 api_router.include_router(estado_resultados.router, dependencies=_requiere_login)
 api_router.include_router(balance_general.router, dependencies=_requiere_login)
 api_router.include_router(cierres.router, dependencies=_requiere_login)
+api_router.include_router(usuarios.router, dependencies=_requiere_login)

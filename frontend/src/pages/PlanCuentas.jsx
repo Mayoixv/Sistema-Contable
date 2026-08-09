@@ -4,9 +4,99 @@ import { useAuth } from '../auth/contexto'
 
 const TIPOS = ['activo', 'pasivo', 'patrimonio', 'ingreso', 'costo', 'gasto']
 
-function FilaCuenta({ cuenta, nivel, onSeleccionar, seleccionada }) {
+function FormularioEditar({ cuenta, onGuardado, onCancelar }) {
+  const [datos, setDatos] = useState({
+    codigo: cuenta.codigo,
+    nombre: cuenta.nombre,
+    descripcion: cuenta.descripcion ?? '',
+    activa: cuenta.activa,
+  })
+  const [error, setError] = useState(null)
+  const [enviando, setEnviando] = useState(false)
+
+  async function guardar(e) {
+    e.preventDefault()
+    setError(null)
+    setEnviando(true)
+    try {
+      await api.cuentas.actualizar(cuenta.id, {
+        codigo: datos.codigo,
+        nombre: datos.nombre,
+        descripcion: datos.descripcion || null,
+        activa: datos.activa,
+      })
+      onGuardado()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setEnviando(false)
+    }
+  }
+
+  return (
+    <tr className="fila-detalle">
+      <td colSpan={5}>
+        <form className="editor-cuenta" onSubmit={guardar}>
+          <div className="grilla-campos">
+            <label>
+              Código
+              <input
+                value={datos.codigo}
+                onChange={(e) => setDatos({ ...datos, codigo: e.target.value })}
+                required
+              />
+            </label>
+            <label>
+              Nombre
+              <input
+                value={datos.nombre}
+                onChange={(e) => setDatos({ ...datos, nombre: e.target.value })}
+                required
+              />
+            </label>
+            <label>
+              Descripción
+              <input
+                value={datos.descripcion}
+                onChange={(e) => setDatos({ ...datos, descripcion: e.target.value })}
+                placeholder="(opcional)"
+              />
+            </label>
+            <label className="checkbox">
+              <span>
+                <input
+                  type="checkbox"
+                  checked={datos.activa}
+                  onChange={(e) => setDatos({ ...datos, activa: e.target.checked })}
+                />{' '}
+                Activa
+              </span>
+            </label>
+          </div>
+          <p className="sutil">
+            No se pueden cambiar acá el tipo ni la naturaleza: alterarlos en una cuenta que ya
+            tiene movimientos reclasificaría en silencio los asientos históricos y cambiaría
+            los reportes de períodos cerrados. Si hace falta, se crea una cuenta nueva.
+          </p>
+          {error && <p className="error">{error}</p>}
+          <div className="acciones">
+            <button type="submit" disabled={enviando}>
+              {enviando ? 'Guardando…' : 'Guardar'}
+            </button>
+            <button type="button" className="secundario" onClick={onCancelar}>
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </td>
+    </tr>
+  )
+}
+
+function FilaCuenta({ cuenta, nivel, onSeleccionar, seleccionada, puedeEscribir, onEliminar, editando, setEditando, onRecargar }) {
   const [abierta, setAbierta] = useState(true)
   const tieneHijas = cuenta.hijas?.length > 0
+  const enEdicion = editando === cuenta.id
 
   return (
     <>
@@ -35,14 +125,37 @@ function FilaCuenta({ cuenta, nivel, onSeleccionar, seleccionada }) {
           )}
           {!cuenta.activa && <span className="etiqueta etiqueta-inactiva">inactiva</span>}
         </td>
-        <td>
+        <td className="acciones-fila">
           {cuenta.acepta_movimiento && (
             <button className="enlace" onClick={() => onSeleccionar(cuenta)}>
               Ver mayor
             </button>
           )}
+          {puedeEscribir && (
+            <>
+              <button
+                className="enlace"
+                onClick={() => setEditando(enEdicion ? null : cuenta.id)}
+              >
+                {enEdicion ? 'Cerrar' : 'Editar'}
+              </button>
+              <button className="enlace peligro" onClick={() => onEliminar(cuenta)}>
+                Eliminar
+              </button>
+            </>
+          )}
         </td>
       </tr>
+      {enEdicion && (
+        <FormularioEditar
+          cuenta={cuenta}
+          onCancelar={() => setEditando(null)}
+          onGuardado={() => {
+            setEditando(null)
+            onRecargar()
+          }}
+        />
+      )}
       {abierta &&
         cuenta.hijas?.map((hija) => (
           <FilaCuenta
@@ -51,6 +164,11 @@ function FilaCuenta({ cuenta, nivel, onSeleccionar, seleccionada }) {
             nivel={nivel + 1}
             onSeleccionar={onSeleccionar}
             seleccionada={seleccionada}
+            puedeEscribir={puedeEscribir}
+            onEliminar={onEliminar}
+            editando={editando}
+            setEditando={setEditando}
+            onRecargar={onRecargar}
           />
         ))}
     </>
@@ -151,6 +269,8 @@ export default function PlanCuentas({ onVerMayor }) {
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
   const [creando, setCreando] = useState(false)
+  const [editando, setEditando] = useState(null)
+  const [accionError, setAccionError] = useState(null)
 
   const cargar = useCallback(async () => {
     setCargando(true)
@@ -172,6 +292,21 @@ export default function PlanCuentas({ onVerMayor }) {
   useEffect(() => {
     cargar()
   }, [cargar])
+
+  async function eliminar(cuenta) {
+    const confirmado = window.confirm(
+      `¿Eliminar la cuenta ${cuenta.codigo} — ${cuenta.nombre}?\n\n` +
+        'No se puede eliminar si tiene cuentas hijas o movimientos contables.',
+    )
+    if (!confirmado) return
+    setAccionError(null)
+    try {
+      await api.cuentas.eliminar(cuenta.id)
+      cargar()
+    } catch (err) {
+      setAccionError(err.message)
+    }
+  }
 
   return (
     <section>
@@ -199,6 +334,7 @@ export default function PlanCuentas({ onVerMayor }) {
       )}
 
       {error && <p className="error">{error}</p>}
+      {accionError && <p className="error">{accionError}</p>}
       {cargando ? (
         <p className="sutil">Cargando…</p>
       ) : arbol.length === 0 ? (
@@ -222,6 +358,11 @@ export default function PlanCuentas({ onVerMayor }) {
                   cuenta={cuenta}
                   nivel={0}
                   onSeleccionar={onVerMayor}
+                  puedeEscribir={puedeEscribir}
+                  onEliminar={eliminar}
+                  editando={editando}
+                  setEditando={setEditando}
+                  onRecargar={cargar}
                 />
               ))}
             </tbody>

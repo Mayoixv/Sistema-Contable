@@ -108,10 +108,18 @@ frontend/src/
   formato.js            # formateo de montos
 ```
 
-Pantallas: login, plan de cuentas (árbol con alta), asientos (alta con
-partida doble en vivo, filtros, paginación, reversión y borrado), libro
-mayor, balance de comprobación, estado de resultados, balance general y
-cierre de ejercicio. Los cuatro reportes se pueden bajar en CSV.
+Pantallas: login, plan de cuentas (árbol, con alta/edición/borrado),
+asientos (alta con partida doble en vivo, filtros, paginación, reversión
+con fecha elegible y borrado), libro mayor, balance de comprobación, estado
+de resultados, balance general, cierre de ejercicio y usuarios (solo
+admin). Los cuatro reportes se pueden bajar en CSV. La interfaz cubre toda
+la API.
+
+Al editar una cuenta solo se dejan cambiar `codigo`, `nombre`,
+`descripcion` y `activa`, aunque el `PATCH` acepte más: cambiar el `tipo` o
+la `naturaleza` de una cuenta que ya tiene movimientos reclasificaría en
+silencio los asientos históricos y alteraría reportes de períodos ya
+cerrados. Para eso conviene crear una cuenta nueva.
 
 Detalles de diseño:
 
@@ -141,9 +149,10 @@ Detalles de diseño:
 Toda la API bajo `/api/v1` exige un JWT, salvo `/api/v1/auth/*` y `/health`.
 
 ```
-POST /api/v1/auth/registrar   {"email", "nombre", "password"}   -> 201 UsuarioRead
+POST /api/v1/auth/registrar   {"email", "nombre", "password", "rol"?}  -> 201 UsuarioRead
 POST /api/v1/auth/login       form-urlencoded: username=<email>&password=<password>  -> {"access_token", "token_type"}
 GET  /api/v1/auth/me          (con Authorization: Bearer <token>)  -> UsuarioRead
+GET  /api/v1/usuarios/        (solo admin)  -> [UsuarioRead]
 ```
 
 `/login` usa `OAuth2PasswordRequestForm` (por eso es form-urlencoded y no

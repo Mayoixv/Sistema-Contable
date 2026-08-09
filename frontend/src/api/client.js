@@ -129,6 +129,10 @@ export const api = {
   me: () => request('/api/v1/auth/me'),
   registrar: (datos) => request('/api/v1/auth/registrar', { method: 'POST', body: datos }),
 
+  usuarios: {
+    listar: () => request('/api/v1/usuarios/'),
+  },
+
   cuentas: {
     listar: (params) => request('/api/v1/cuentas/', { params }),
     arbol: () => request('/api/v1/cuentas/arbol'),
