@@ -152,8 +152,25 @@ Toda la API bajo `/api/v1` exige un JWT, salvo `/api/v1/auth/*` y `/health`.
 POST /api/v1/auth/registrar   {"email", "nombre", "password", "rol"?}  -> 201 UsuarioRead
 POST /api/v1/auth/login       form-urlencoded: username=<email>&password=<password>  -> {"access_token", "token_type"}
 GET  /api/v1/auth/me          (con Authorization: Bearer <token>)  -> UsuarioRead
-GET  /api/v1/usuarios/        (solo admin)  -> [UsuarioRead]
+GET    /api/v1/usuarios/       (solo admin)  -> [UsuarioRead]
+PATCH  /api/v1/usuarios/{id}   (solo admin)  {"rol"?, "activo"?}
+DELETE /api/v1/usuarios/{id}   (solo admin)
 ```
+
+Sobre la administración de usuarios:
+
+- **Un admin no puede degradarse, desactivarse ni eliminarse a sí mismo**
+  (`400`). No es una comodidad: es lo que garantiza que el sistema nunca se
+  quede sin admin activo. Como `requiere_admin` asegura que quien ejecuta la
+  acción es un admin activo y el objetivo siempre es otro usuario, después
+  de cualquier operación queda en pie al menos quien la ejecutó. Importa
+  porque no habría recuperación posible: sin admins nadie puede crear
+  usuarios, y el registro público solo se reabre si no queda **ningún**
+  usuario.
+- **Eliminar un usuario con historial contable se rechaza** (`409`, por el
+  `ON DELETE RESTRICT` de `asientos`/`cierres`): borrarlo destruiría la
+  trazabilidad de quién cargó qué. Para esos casos está `activo=false`, que
+  le corta el acceso conservando la autoría.
 
 `/login` usa `OAuth2PasswordRequestForm` (por eso es form-urlencoded y no
 JSON, y el campo se llama `username` aunque en este sistema es el email) —

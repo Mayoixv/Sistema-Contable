@@ -18,6 +18,11 @@ class UsuarioCreate(BaseModel):
     )
 
 
+class UsuarioUpdate(BaseModel):
+    rol: RolUsuario | None = None
+    activo: bool | None = None
+
+
 class UsuarioRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

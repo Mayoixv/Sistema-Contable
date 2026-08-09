@@ -131,6 +131,8 @@ export const api = {
 
   usuarios: {
     listar: () => request('/api/v1/usuarios/'),
+    actualizar: (id, datos) => request(`/api/v1/usuarios/${id}`, { method: 'PATCH', body: datos }),
+    eliminar: (id) => request(`/api/v1/usuarios/${id}`, { method: 'DELETE' }),
   },
 
   cuentas: {

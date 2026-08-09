@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import hash_password, verify_password
 from app.models.usuario import RolUsuario, Usuario
-from app.schemas.usuario import UsuarioCreate
+from app.schemas.usuario import UsuarioCreate, UsuarioUpdate
 
 
 class EmailYaRegistradoError(Exception):
@@ -57,6 +57,20 @@ def create(db: Session, *, obj_in: UsuarioCreate, rol: RolUsuario | None = None)
     db.commit()
     db.refresh(db_obj)
     return db_obj
+
+
+def update(db: Session, *, db_obj: Usuario, obj_in: UsuarioUpdate) -> Usuario:
+    for campo, valor in obj_in.model_dump(exclude_unset=True).items():
+        setattr(db_obj, campo, valor)
+    db.add(db_obj)
+    db.commit()
+    db.refresh(db_obj)
+    return db_obj
+
+
+def remove(db: Session, *, db_obj: Usuario) -> None:
+    db.delete(db_obj)
+    db.commit()
 
 
 def authenticate(db: Session, *, email: str, password: str) -> Usuario | None:

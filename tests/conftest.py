@@ -86,7 +86,7 @@ def headers_para(client: TestClient):
     `client.get(url, headers=headers_para(...))` pega como ese usuario.
     """
 
-    def _crear(rol: str, email: str | None = None) -> dict[str, str]:
+    def _crear(rol: str, *, email: str | None = None) -> dict[str, str]:
         email = email or f"{rol}@example.com"
         password = "password123"
         r = client.post(

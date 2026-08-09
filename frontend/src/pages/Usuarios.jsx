@@ -89,8 +89,20 @@ function FormularioUsuario({ onCreado, onCancelar }) {
 export default function Usuarios() {
   const { usuario: actual } = useAuth()
   const [creando, setCreando] = useState(false)
+  const [accionError, setAccionError] = useState(null)
   const cargador = useCallback(() => api.usuarios.listar(), [])
   const { datos, error, cargando, recargar } = useCargar(cargador)
+
+  async function accion(fn, confirmacion) {
+    if (confirmacion && !window.confirm(confirmacion)) return
+    setAccionError(null)
+    try {
+      await fn()
+      recargar()
+    } catch (err) {
+      setAccionError(err.message)
+    }
+  }
 
   return (
     <section>
@@ -115,6 +127,7 @@ export default function Usuarios() {
       )}
 
       {error && <p className="error">{error}</p>}
+      {accionError && <p className="error">{accionError}</p>}
       {cargando && <p className="sutil">Cargando…</p>}
 
       {datos && !cargando && (
@@ -126,30 +139,83 @@ export default function Usuarios() {
                 <th>Nombre</th>
                 <th>Rol</th>
                 <th>Estado</th>
+                <th />
               </tr>
             </thead>
             <tbody>
-              {datos.map((u) => (
-                <tr key={u.id}>
-                  <td>
-                    {u.email}
-                    {u.id === actual.id && <span className="etiqueta">vos</span>}
-                  </td>
-                  <td>{u.nombre}</td>
-                  <td>
-                    <span className={`etiqueta rol-${u.rol}`}>{u.rol}</span>
-                  </td>
-                  <td>
-                    {u.activo ? (
-                      <span className="sutil">activo</span>
-                    ) : (
-                      <span className="etiqueta etiqueta-inactiva">inactivo</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {datos.map((u) => {
+                const esUnoMismo = u.id === actual.id
+                return (
+                  <tr key={u.id}>
+                    <td>
+                      {u.email}
+                      {esUnoMismo && <span className="etiqueta">vos</span>}
+                    </td>
+                    <td>{u.nombre}</td>
+                    <td>
+                      {esUnoMismo ? (
+                        <span className={`etiqueta rol-${u.rol}`}>{u.rol}</span>
+                      ) : (
+                        <select
+                          value={u.rol}
+                          onChange={(e) =>
+                            accion(() => api.usuarios.actualizar(u.id, { rol: e.target.value }))
+                          }
+                        >
+                          {ROLES.map((r) => (
+                            <option key={r.valor} value={r.valor}>
+                              {r.valor}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </td>
+                    <td>
+                      {u.activo ? (
+                        <span className="sutil">activo</span>
+                      ) : (
+                        <span className="etiqueta etiqueta-inactiva">inactivo</span>
+                      )}
+                    </td>
+                    <td className="acciones-fila">
+                      {esUnoMismo ? (
+                        <span className="sutil">— tu propio usuario —</span>
+                      ) : (
+                        <>
+                          <button
+                            className="enlace"
+                            onClick={() =>
+                              accion(() =>
+                                api.usuarios.actualizar(u.id, { activo: !u.activo }),
+                              )
+                            }
+                          >
+                            {u.activo ? 'Desactivar' : 'Activar'}
+                          </button>
+                          <button
+                            className="enlace peligro"
+                            onClick={() =>
+                              accion(
+                                () => api.usuarios.eliminar(u.id),
+                                `¿Eliminar a ${u.email}?\n\nSi cargó asientos o hizo cierres no se podrá borrar, para no perder la trazabilidad: en ese caso desactivalo.`,
+                              )
+                            }
+                          >
+                            Eliminar
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
+          <p className="sutil">
+            Sobre tu propio usuario no podés actuar: es la única forma de garantizar que
+            siempre quede un admin activo, y no habría manera de recuperar el acceso si el
+            sistema se quedara sin ninguno.
+          </p>
         </div>
       )}
     </section>
