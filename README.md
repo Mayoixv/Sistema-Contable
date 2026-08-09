@@ -99,11 +99,19 @@ Estructura:
 
 ```
 frontend/src/
-  api/client.js        # fetch con el token + traducción de errores del backend
-  auth/AuthContext.jsx # sesión (token en localStorage), rol del usuario
-  pages/               # Login, PlanCuentas, LibroMayor
-  formato.js           # formateo de montos
+  api/client.js         # fetch con el token, descarga de CSV, errores del backend
+  auth/contexto.js      # Context + hook useAuth
+  auth/AuthContext.jsx  # AuthProvider (sesión, rol del usuario)
+  components/           # FiltrosFecha
+  hooks/useCargar.js    # carga con estados de cargando/error
+  pages/                # Login, PlanCuentas, LibroMayor, Asientos, reportes, Cierres
+  formato.js            # formateo de montos
 ```
+
+Pantallas: login, plan de cuentas (árbol con alta), asientos (alta con
+partida doble en vivo, filtros, paginación, reversión y borrado), libro
+mayor, balance de comprobación, estado de resultados, balance general y
+cierre de ejercicio. Los cuatro reportes se pueden bajar en CSV.
 
 Detalles de diseño:
 
@@ -117,14 +125,16 @@ Detalles de diseño:
   ocuparse.
 - Los montos llegan como string (`Decimal` serializado) para no perder
   precisión, y se convierten a número **solo para mostrarlos**.
+- En la carga de asientos, el control de partida doble compara **centavos
+  enteros**, no floats: en punto flotante `0.10 + 0.20` da
+  `0.30000000000000004`, y un asiento perfectamente balanceado se marcaría
+  como descuadrado.
+- La descarga de CSV se hace con `fetch` + blob, no con un `<a href>`: la
+  API exige el header `Authorization`, que el navegador **no** manda en una
+  navegación normal, así que un enlace común devolvería 401.
 - La UI oculta las acciones de escritura si el rol no alcanza, pero eso es
   comodidad, no seguridad: quien manda la petición igual choca con el `403`
   del backend.
-
-Pantallas hechas: login, plan de cuentas (árbol, con alta de cuentas) y
-libro mayor con filtros por fecha y descarga CSV. Faltan carga de asientos,
-el resto de los reportes y el cierre de ejercicio, que por ahora se siguen
-usando desde `/docs`.
 
 ## Autenticación
 

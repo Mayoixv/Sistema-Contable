@@ -81,6 +81,43 @@ async function request(path, { method = 'GET', body, params, form } = {}) {
   return cuerpo
 }
 
+/**
+ * Descarga un reporte en CSV.
+ *
+ * No se puede usar un `<a href>` común: la API exige el header
+ * `Authorization`, que el navegador no manda en una navegación normal (daría
+ * 401). Se pide con fetch y se dispara la descarga desde un blob.
+ */
+export async function descargarCsv(path, { params, nombreArchivo } = {}) {
+  const url = new URL(path, window.location.origin)
+  for (const [clave, valor] of Object.entries(params ?? {})) {
+    if (valor !== undefined && valor !== null && valor !== '') {
+      url.searchParams.set(clave, valor)
+    }
+  }
+  url.searchParams.set('formato', 'csv')
+
+  const token = getToken()
+  const res = await fetch(url, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (res.status === 401) {
+    clearToken()
+    alRecibir401()
+  }
+  if (!res.ok) throw new ApiError(`No se pudo descargar el CSV (${res.status})`, res.status)
+
+  const blob = await res.blob()
+  const objectUrl = URL.createObjectURL(blob)
+  const enlace = document.createElement('a')
+  enlace.href = objectUrl
+  enlace.download = nombreArchivo
+  document.body.appendChild(enlace)
+  enlace.click()
+  enlace.remove()
+  URL.revokeObjectURL(objectUrl)
+}
+
 export const api = {
   // El backend usa OAuth2PasswordRequestForm: el login va como formulario
   // (no JSON) y el campo se llama "username" aunque lleve el email.

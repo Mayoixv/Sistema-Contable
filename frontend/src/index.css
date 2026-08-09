@@ -338,6 +338,141 @@ th.num {
   margin-left: 0.35rem;
 }
 
+/* ---------- Carga de asientos ---------- */
+
+.tabla-lineas {
+  margin: 0.5rem 0;
+}
+
+.tabla-lineas td {
+  padding: 0.3rem 0.35rem;
+}
+
+.tabla-lineas select,
+.tabla-lineas input {
+  padding: 0.4rem 0.5rem;
+}
+
+.tabla-lineas input.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabla-lineas tfoot td {
+  border-top: 2px solid var(--borde);
+  border-bottom: none;
+}
+
+.linea-invalida td {
+  background: var(--error-suave);
+}
+
+.ok {
+  color: #1f7a3d;
+  font-weight: 600;
+}
+
+.desbalance {
+  color: var(--error);
+  font-weight: 600;
+}
+
+.negativo {
+  color: var(--error);
+}
+
+/* ---------- Listado de asientos ---------- */
+
+.fila-detalle > td {
+  background: var(--fondo);
+  padding: 0.25rem 0.75rem 0.5rem 2.5rem;
+}
+
+.tabla-anidada td {
+  border-bottom: 1px solid var(--borde);
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.tabla-anidada tr:last-child td {
+  border-bottom: none;
+}
+
+.acciones-fila {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
+button.peligro {
+  color: var(--error);
+}
+
+.paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: -0.5rem;
+}
+
+.paginacion div {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* ---------- Reportes ---------- */
+
+.banda {
+  font-size: 0.875rem;
+  font-weight: 550;
+  padding: 0.75rem 1rem;
+}
+
+.banda-ok {
+  background: #eaf7ee;
+  border-color: #c7e6d1;
+  color: #1f7a3d;
+}
+
+.banda-error {
+  background: var(--error-suave);
+  border-color: #f3c9c6;
+  color: var(--error);
+}
+
+.fila-seccion td {
+  font-weight: 650;
+  padding-top: 1rem;
+  border-bottom-color: var(--texto);
+}
+
+.fila-subtotal td {
+  font-weight: 600;
+}
+
+.fila-destacada td {
+  font-size: 1rem;
+  border-top: 2px solid var(--borde);
+}
+
+.dos-columnas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 800px) {
+  .dos-columnas {
+    grid-template-columns: 1fr;
+  }
+  header {
+    flex-wrap: wrap;
+  }
+}
+
 .rol-admin {
   background: #f4ecfb;
   color: #6b3fa0;

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { api } from '../api/client'
+import { api, descargarCsv } from '../api/client'
 import { formatearMonto } from '../formato'
 
 export default function LibroMayor() {
@@ -38,14 +38,17 @@ export default function LibroMayor() {
             </p>
           )}
         </div>
-        <a
-          className="boton-enlace"
-          href={`/api/v1/libro-mayor/${cuentaId}?formato=csv`}
-          target="_blank"
-          rel="noreferrer"
+        <button
+          className="secundario"
+          onClick={() =>
+            descargarCsv(`/api/v1/libro-mayor/${cuentaId}`, {
+              params: rango,
+              nombreArchivo: `libro_mayor_${datos?.codigo ?? cuentaId}.csv`,
+            })
+          }
         >
           Descargar CSV
-        </a>
+        </button>
       </div>
 
       <form

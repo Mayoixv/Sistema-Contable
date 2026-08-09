@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../api/client'
-import { useAuth } from '../auth/AuthContext'
+import { useAuth } from '../auth/contexto'
 
 const TIPOS = ['activo', 'pasivo', 'patrimonio', 'ingreso', 'costo', 'gasto']
 
