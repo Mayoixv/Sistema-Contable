@@ -25,6 +25,9 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql+psycopg2://contable_user:contable_pass@db:5432/contable_db
+      # Con ENTORNO=produccion la app no arranca si SECRET_KEY sigue siendo
+      # la de ejemplo: `ENTORNO=produccion SECRET_KEY=$(openssl rand -hex 32) docker compose up`
+      ENTORNO: ${ENTORNO:-desarrollo}
       SECRET_KEY: ${SECRET_KEY:-dev-secret-key-cambiar-en-produccion}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-480}
     ports:

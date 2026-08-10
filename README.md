@@ -1,6 +1,27 @@
 # Sistema Contable
 
-API de contabilidad con FastAPI + PostgreSQL + SQLAlchemy + Alembic.
+[![CI](https://github.com/Mayoixv/Sistema-Contable/actions/workflows/ci.yml/badge.svg)](https://github.com/Mayoixv/Sistema-Contable/actions/workflows/ci.yml)
+
+Sistema de contabilidad por partida doble: API REST con FastAPI +
+PostgreSQL + SQLAlchemy + Alembic, e interfaz web en React.
+
+```bash
+docker compose up -d --build   # http://localhost:8001
+```
+
+Qué cubre:
+
+- **Plan de cuentas** jerárquico, con cuentas sumarias y de detalle.
+- **Asientos contables** con validación de partida doble en el schema y en
+  la base; no se editan, se **reversan** (queda el error y su corrección).
+- **Reportes**: libro mayor, balance de comprobación, estado de resultados
+  y balance general, exportables a CSV.
+- **Cierre de ejercicio**, que traslada el resultado a patrimonio sin
+  romper los reportes del período cerrado.
+- **Usuarios con roles** (admin/contador/lector) y auditoría de quién cargó
+  cada asiento.
+
+Corren 102 tests de backend (pytest) y 20 de frontend (Vitest) en CI.
 
 ## Estructura
 
@@ -61,7 +82,9 @@ build no depende de que hayas corrido `npm run build` en tu máquina.
 - Los datos persisten en el volumen nombrado `contable_pgdata` entre
   reinicios; `docker compose down -v` si además querés borrarlos.
 - `SECRET_KEY` se puede sobreescribir exportándola antes del `up`
-  (`export SECRET_KEY=...`) — si no, usa el default de desarrollo.
+  (`export SECRET_KEY=...`) — si no, usa el default de desarrollo. Para
+  levantarlo como producción:
+  `ENTORNO=produccion SECRET_KEY=$(openssl rand -hex 32) docker compose up -d`
 
 Para logs: `docker compose logs -f api`. Para bajar todo: `docker compose down`.
 
@@ -260,15 +283,13 @@ Notas de diseño:
   distingue mayúsculas y `DUP@x.com` se detecta como duplicado de
   `dup@x.com` en lugar de crear dos cuentas distintas.
 - El JWT se firma con `SECRET_KEY` (HS256, expira a las
-  `ACCESS_TOKEN_EXPIRE_MINUTES`, por defecto 8 horas) — **el valor por
-  defecto en `config.py` es solo para desarrollo**; en producción hay que
-  sobreescribirlo con algo como `openssl rand -hex 32` vía variable de
-  entorno.
-- `/auth/registrar` está abierto (cualquiera puede crear una cuenta) porque
-  el sistema no tiene todavía roles ni un usuario admin que apruebe altas.
-  Para un despliegue real conviene cerrarlo o ponerlo detrás de una
-  invitación — tal cual está, cualquier persona con acceso a la API puede
-  crear un usuario y ver/modificar toda la contabilidad.
+  `ACCESS_TOKEN_EXPIRE_MINUTES`, por defecto 8 horas). El valor por defecto
+  en `config.py` **está publicado en este repositorio**, así que sirve solo
+  para desarrollo: con él, cualquiera que haya visto el código podría
+  firmarse un token de admin. Por eso, con `ENTORNO=produccion` la app
+  **se niega a arrancar** si `SECRET_KEY` sigue siendo el de ejemplo
+  (`_exigir_secret_key_propia` en `core/config.py`) — es preferible que el
+  proceso no levante a que levante inseguro y nadie lo note.
 
 ## Modelo: plan de cuentas (`Cuenta`)
 
