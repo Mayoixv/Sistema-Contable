@@ -95,6 +95,48 @@ Para logs: `docker compose logs -f api`. Para bajar todo: `docker compose down`.
 > tomar el mismo puerto. Los datos de ese contenedor viejo no se migran
 > solos al volumen de compose.
 
+### En Windows (o en cualquier PC nueva)
+
+Funciona igual, con Docker Desktop. No hace falta instalar Python, Node ni
+PostgreSQL: todo se compila dentro de la imagen.
+
+1. Instalar [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+   (usa el backend WSL 2; el instalador lo configura solo).
+2. Traer el código. El repositorio es público, así que no hacen falta
+   credenciales:
+   ```powershell
+   git clone https://github.com/Mayoixv/Sistema-Contable.git
+   cd Sistema-Contable
+   ```
+   Sin Git instalado: en GitHub, botón verde **Code → Download ZIP**, y
+   descomprimir.
+3. Levantarlo, con **exactamente el mismo comando** (PowerShell o CMD):
+   ```powershell
+   docker compose up -d --build
+   ```
+4. Abrir `http://localhost:8001`. La primera compilación tarda unos
+   minutos; las siguientes usan caché.
+
+Lo único que cambia respecto de Linux o macOS es la sintaxis de las
+variables de entorno, porque `$(...)` es de bash. En PowerShell:
+
+```powershell
+$env:ENTORNO = "produccion"
+$env:SECRET_KEY = -join ((1..32) | ForEach-Object { '{0:x2}' -f (Get-Random -Max 256) })
+docker compose up -d --build
+```
+
+> **La base de datos no viaja con el código.** Vive en el volumen Docker
+> `contable_pgdata`, que es local a cada máquina. En una PC nueva el
+> sistema arranca vacío, y el primer usuario que se registre será el admin
+> de *esa* instalación. Para mover los datos hay que hacer un dump:
+> `docker compose exec db pg_dump -U contable_user contable_db > respaldo.sql`,
+> y restaurarlo del otro lado.
+
+El repositorio incluye un `.gitattributes` que fuerza finales de línea LF,
+para que un checkout en Windows no convierta todo a CRLF y ensucie los
+diffs o rompa scripts dentro del contenedor Linux.
+
 ### Opción B: entorno local (venv + Postgres aparte)
 
 ```bash
@@ -107,6 +149,11 @@ createdb contable_db   # o crear la DB manualmente en PostgreSQL
 alembic upgrade head
 uvicorn app.main:app --reload
 ```
+
+En Windows cambian dos cosas: se activa el entorno con
+`.venv\Scripts\Activate.ps1` (PowerShell) o `.venv\Scripts\activate.bat`
+(CMD), y hay que instalar PostgreSQL aparte. Para el frontend hace falta
+**Node 22+**. Por eso conviene la opción de Docker.
 
 Docs interactivas: `http://localhost:8000/docs`
 

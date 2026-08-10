@@ -1,0 +1,11 @@
+# Git para Windows convierte los finales de línea a CRLF al hacer checkout
+# (core.autocrlf=true por defecto). Eso ensucia los diffs y rompería
+# cualquier script que se ejecute dentro de un contenedor Linux. Acá se
+# normaliza a LF en el repositorio y en el working tree, en cualquier SO.
+* text=auto eol=lf
+
+# Binarios: no tocar.
+*.png binary
+*.jpg binary
+*.svg text eol=lf
+*.ico binary
