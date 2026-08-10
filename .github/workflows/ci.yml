@@ -30,14 +30,16 @@ jobs:
         run: pytest
 
   frontend:
-    name: Frontend (lint + build)
+    name: Frontend (lint + tests + build)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          # 22+ es requisito de jsdom 30 (usa APIs de undici que no existen
+          # en Node 20); ver "engines" en frontend/package.json.
+          node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
@@ -48,6 +50,10 @@ jobs:
       - name: Lint
         working-directory: frontend
         run: npm run lint
+
+      - name: Correr tests
+        working-directory: frontend
+        run: npm test
 
       - name: Build
         working-directory: frontend

@@ -511,7 +511,9 @@ respuesta para ellos.
 
 ```bash
 pip install -r requirements-dev.txt
-pytest
+pytest                       # backend
+
+cd frontend && npm test      # frontend (Vitest)
 ```
 
 La suite (`tests/`) corre contra SQLite en memoria (no requiere Docker ni
@@ -555,3 +557,29 @@ Cobertura por módulo:
   siga mostrando la actividad del período cerrado, que un segundo cierre
   tome solo lo posterior, y los casos de pérdida y de utilidad exactamente
   cero.
+- `test_spa.py` — que la API sirva el bundle del frontend con fallback a
+  `index.html`, sin tragarse los 404 de `/api/` ni permitir path traversal.
+  Se saltea si no hay build (`frontend/dist` está gitignoreado).
+
+### Frontend (Vitest + Testing Library)
+
+Requiere **Node 22+**: jsdom 30 usa APIs de undici que no existen en Node
+20 (`webidl.util.markAsUncloneable`), y sin eso los tests ni arrancan. Está
+declarado en `engines` de `frontend/package.json`.
+
+- `src/api/client.test.js` — el cliente HTTP: header `Authorization`, login
+  como formulario, el 401 que borra el token y avisa que expiró la sesión,
+  el armado del mensaje a partir de los errores de validación 422 de
+  FastAPI, y el descarte de params vacíos en la query.
+- `src/pages/AsientoNuevo.test.jsx` — la pantalla con más lógica: detección
+  de balance, exclusión mutua entre débito y crédito, que no se descuadre
+  por redondeo de punto flotante (`0.1 + 0.2`), y que solo viajen al
+  backend las líneas con datos.
+- `src/pages/Login.test.jsx` — login exitoso guardando el token, y el error
+  de credenciales sin dejar la sesión a medias.
+
+`src/test/setup.js` instala un `localStorage` propio en memoria en vez de
+usar el de jsdom. Node 26 expone un `localStorage` nativo experimental que
+queda deshabilitado sin `--localstorage-file` y termina tapando al de
+jsdom; en Node 22 eso no pasa. Sin esta implementación propia los tests
+pasarían en CI y fallarían en una máquina con Node 26.

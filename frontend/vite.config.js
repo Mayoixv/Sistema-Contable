@@ -14,4 +14,11 @@ export default defineConfig({
       '/health': { target: 'http://localhost:8001', changeOrigin: true },
     },
   },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/test/setup.js',
+    // El bundle compilado no se testea.
+    exclude: ['node_modules', 'dist'],
+  },
 })

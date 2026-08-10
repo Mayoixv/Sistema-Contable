@@ -1,5 +1,5 @@
 # --- Etapa 1: compilar la interfaz web ---
-FROM node:20-slim AS frontend
+FROM node:22-slim AS frontend
 
 WORKDIR /frontend
 
