@@ -1,0 +1,1772 @@
+<title>Documentación · Sistema Contable</title>
+<style>
+  /* ---------- Tokens: paleta de libro mayor (tinta, papel, reglas) ---------- */
+  :root {
+    --bg:          #F5F6F4;
+    --surface:     #FFFFFF;
+    --surface-alt: #EDEFEB;
+    --text:        #1B2426;
+    --text-muted:  #5C6968;
+    --rule:        #D5D9D4;
+    --rule-strong: #A9B1AD;
+    --accent:      #1F5F4F;
+    --accent-soft: #E2EEE8;
+    --warn:        #8C3A2B;
+    --warn-soft:   #F6E7E2;
+
+    --serif: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, 'Liberation Serif', 'DejaVu Serif', serif;
+    --sans: system-ui, -apple-system, 'Segoe UI', Cantarell, 'Noto Sans', 'DejaVu Sans', sans-serif;
+    --mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+
+    --measure: 68ch;
+    --s1: .4rem; --s2: .75rem; --s3: 1.15rem; --s4: 1.75rem; --s5: 2.6rem; --s6: 4rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:          #131819;
+      --surface:     #1A2122;
+      --surface-alt: #202829;
+      --text:        #E4E8E5;
+      --text-muted:  #94A19F;
+      --rule:        #2C3536;
+      --rule-strong: #46524F;
+      --accent:      #74C4A8;
+      --accent-soft: #1D2E29;
+      --warn:        #DE9784;
+      --warn-soft:   #2E211E;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg:          #131819;
+    --surface:     #1A2122;
+    --surface-alt: #202829;
+    --text:        #E4E8E5;
+    --text-muted:  #94A19F;
+    --rule:        #2C3536;
+    --rule-strong: #46524F;
+    --accent:      #74C4A8;
+    --accent-soft: #1D2E29;
+    --warn:        #DE9784;
+    --warn-soft:   #2E211E;
+  }
+
+  /* ---------- Base ---------- */
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  code, kbd, pre { font-family: var(--mono); }
+
+  /* ---------- Estructura ---------- */
+  .wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 var(--s3);
+  }
+
+  @media (min-width: 1000px) {
+    .wrap {
+      grid-template-columns: 15.5rem minmax(0, 1fr);
+      gap: var(--s6);
+      padding: 0 var(--s4);
+    }
+  }
+
+  /* ---------- Índice lateral ---------- */
+  .indice { padding-block: var(--s4); }
+
+  @media (min-width: 1000px) {
+    .indice {
+      position: sticky;
+      top: 0;
+      align-self: start;
+      max-height: 100vh;
+      overflow-y: auto;
+      padding-block: var(--s5);
+    }
+  }
+
+  .indice__titulo {
+    font-family: var(--sans);
+    font-size: .7rem;
+    font-weight: 600;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0 0 var(--s2);
+  }
+
+  .indice ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    counter-reset: seccion;
+  }
+
+  .indice a {
+    display: grid;
+    grid-template-columns: 1.9rem 1fr;
+    gap: .35rem;
+    padding: .3rem .45rem;
+    font-size: .875rem;
+    line-height: 1.4;
+    color: var(--text);
+    text-decoration: none;
+    border-radius: 3px;
+  }
+
+  .indice a::before {
+    counter-increment: seccion;
+    content: counter(seccion) ".";
+    font-family: var(--mono);
+    font-size: .78rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .indice a:hover { background: var(--accent-soft); color: var(--accent); }
+  .indice a:hover::before { color: var(--accent); }
+
+  .indice details > summary {
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: .74rem;
+    font-weight: 600;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: var(--s2) 0;
+  }
+
+  @media (min-width: 1000px) {
+    .indice details { display: contents; }
+    .indice details > summary { display: none; }
+  }
+
+  /* ---------- Portada ---------- */
+  .portada {
+    padding-block: var(--s5) var(--s4);
+    border-bottom: 3px double var(--rule-strong);
+  }
+
+  .portada__eyebrow {
+    font-family: var(--mono);
+    font-size: .74rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 var(--s2);
+  }
+
+  .portada h1 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(2.1rem, 5.5vw, 3.1rem);
+    line-height: 1.08;
+    letter-spacing: -.015em;
+    text-wrap: balance;
+    margin: 0 0 var(--s3);
+  }
+
+  .portada__lead {
+    max-width: var(--measure);
+    font-size: 1.09rem;
+    color: var(--text-muted);
+    margin: 0 0 var(--s4);
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s1) var(--s2);
+    align-items: baseline;
+    font-family: var(--mono);
+    font-size: .78rem;
+    color: var(--text-muted);
+  }
+
+  .meta__chip {
+    padding: .18rem .5rem;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    background: var(--surface);
+  }
+
+  /* ---------- Secciones ---------- */
+  section { padding-block: var(--s5); border-bottom: 1px solid var(--rule); }
+  section:last-of-type { border-bottom: 0; }
+
+  h2 {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--s2);
+    align-items: baseline;
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(1.5rem, 3vw, 1.95rem);
+    line-height: 1.15;
+    letter-spacing: -.01em;
+    text-wrap: balance;
+    margin: 0 0 var(--s3);
+    scroll-margin-top: var(--s3);
+  }
+
+  /* El número de sección se compone como un código de cuenta contable:
+     jerárquico, monoespaciado, alineado. Es el mismo lenguaje que el
+     objeto que documenta. */
+  .num {
+    font-family: var(--mono);
+    font-size: .62em;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: .02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  h3 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 1.24rem;
+    line-height: 1.25;
+    text-wrap: balance;
+    margin: var(--s4) 0 var(--s2);
+  }
+
+  h4 {
+    font-family: var(--sans);
+    font-weight: 650;
+    font-size: .96rem;
+    margin: var(--s3) 0 var(--s1);
+  }
+
+  p, ul, ol { max-width: var(--measure); }
+  p { margin: 0 0 var(--s3); }
+  ul, ol { margin: 0 0 var(--s3); padding-left: 1.3rem; }
+  li { margin-bottom: var(--s1); }
+  li > ul, li > ol { margin-top: var(--s1); margin-bottom: 0; }
+  strong { font-weight: 650; }
+
+  .sub {
+    font-size: .82rem;
+    color: var(--text-muted);
+    font-family: var(--mono);
+  }
+
+  /* ---------- Tablas de libro mayor ---------- */
+  .tabla-scroll {
+    overflow-x: auto;
+    margin: 0 0 var(--s4);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    background: var(--surface);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .875rem;
+  }
+
+  caption {
+    caption-side: top;
+    text-align: left;
+    padding: var(--s2) var(--s3) 0;
+    font-family: var(--mono);
+    font-size: .74rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  th, td {
+    padding: .5rem .7rem;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  thead th {
+    background: var(--surface-alt);
+    font-family: var(--sans);
+    font-size: .72rem;
+    font-weight: 650;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--rule-strong);
+    white-space: nowrap;
+  }
+
+  tbody tr:last-child td { border-bottom: 0; }
+
+  td code, th code { font-size: .92em; }
+
+  /* Importes: alineados a la derecha con cifras de ancho fijo, como en una
+     planilla contable. */
+  .n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .c { text-align: center; }
+
+  /* Convención contable: los totales se subrayan con doble línea. */
+  .total td {
+    font-weight: 650;
+    border-top: 1px solid var(--rule-strong);
+    border-bottom: 3px double var(--rule-strong);
+  }
+
+  /* ---------- Chips de permiso ---------- */
+  .chip {
+    display: inline-block;
+    padding: .1rem .42rem;
+    border-radius: 2px;
+    font-family: var(--mono);
+    font-size: .7rem;
+    letter-spacing: .04em;
+    white-space: nowrap;
+    border: 1px solid transparent;
+  }
+  .chip--publico { background: var(--surface-alt); color: var(--text-muted); border-color: var(--rule); }
+  .chip--sesion  { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+  .chip--escribe { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); font-weight: 650; }
+  .chip--admin   { background: var(--warn-soft); color: var(--warn); border-color: var(--warn); font-weight: 650; }
+
+  .leyenda {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2);
+    margin: 0 0 var(--s3);
+    padding: var(--s2) var(--s3);
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    font-size: .82rem;
+    max-width: none;
+  }
+  .leyenda span { display: inline-flex; align-items: center; gap: .35rem; }
+
+  /* ---------- Código ---------- */
+  pre {
+    margin: 0 0 var(--s3);
+    padding: var(--s3);
+    overflow-x: auto;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 2px solid var(--accent);
+    border-radius: 3px;
+    font-size: .82rem;
+    line-height: 1.6;
+    tab-size: 2;
+  }
+  pre code { color: inherit; }
+
+  :not(pre) > code {
+    padding: .1em .32em;
+    background: var(--surface-alt);
+    border-radius: 2px;
+    font-size: .88em;
+    word-break: break-word;
+  }
+
+  /* ---------- Notas ---------- */
+  .nota {
+    margin: 0 0 var(--s3);
+    padding: var(--s3);
+    max-width: var(--measure);
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 2px solid var(--accent);
+    border-radius: 3px;
+  }
+  .nota > :last-child { margin-bottom: 0; }
+  .nota__label {
+    display: block;
+    font-family: var(--mono);
+    font-size: .7rem;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: var(--s1);
+  }
+
+  .nota--limite { border-left-color: var(--warn); }
+  .nota--limite .nota__label { color: var(--warn); }
+
+  .ecuacion {
+    font-family: var(--mono);
+    font-size: 1rem;
+    text-align: center;
+    padding: var(--s3);
+    margin: 0 0 var(--s3);
+    max-width: var(--measure);
+    background: var(--surface);
+    border-top: 1px solid var(--rule-strong);
+    border-bottom: 3px double var(--rule-strong);
+  }
+
+  /* ---------- Pie ---------- */
+  footer {
+    padding-block: var(--s5) var(--s6);
+    border-top: 3px double var(--rule-strong);
+    font-size: .85rem;
+    color: var(--text-muted);
+    max-width: var(--measure);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  }
+  html { scroll-behavior: smooth; }
+</style>
+
+<div class="wrap">
+  <nav class="indice" aria-label="Índice">
+    <details open>
+      <summary>Índice</summary>
+      <p class="indice__titulo">Contenido</p>
+      <ol>
+        <li><a href="#s1">Qué es el sistema</a></li>
+        <li><a href="#s2">Cómo levantarlo</a></li>
+        <li><a href="#s3">Fundamentos contables</a></li>
+        <li><a href="#s4">El plan de cuentas</a></li>
+        <li><a href="#s5">Modelo de datos</a></li>
+        <li><a href="#s6">La API</a></li>
+        <li><a href="#s7">Cálculo de los reportes</a></li>
+        <li><a href="#s8">Cierre de ejercicio</a></li>
+        <li><a href="#s9">Autenticación y roles</a></li>
+        <li><a href="#s10">La interfaz web</a></li>
+        <li><a href="#s11">Tests</a></li>
+        <li><a href="#s12">Infraestructura</a></li>
+        <li><a href="#s13">Recorrido con datos reales</a></li>
+        <li><a href="#s14">Decisiones de diseño</a></li>
+        <li><a href="#s15">Limitaciones conocidas</a></li>
+      </ol>
+    </details>
+  </nav>
+
+  <main>
+    <header class="portada">
+      <p class="portada__eyebrow">Documentación técnica</p>
+      <h1>Sistema Contable</h1>
+      <p class="portada__lead">
+        Sistema de contabilidad por partida doble: qué hace cada pieza, por qué
+        está hecha así, y un recorrido cuenta por cuenta con datos reales.
+      </p>
+      <div class="meta">
+        <span class="meta__chip">FastAPI</span>
+        <span class="meta__chip">PostgreSQL</span>
+        <span class="meta__chip">SQLAlchemy</span>
+        <span class="meta__chip">Alembic</span>
+        <span class="meta__chip">React</span>
+        <span class="meta__chip">Docker</span>
+        <span><a href="https://github.com/Mayoixv/Sistema-Contable">github.com/Mayoixv/Sistema-Contable</a></span>
+      </div>
+    </header>
+
+    <!-- 1 -->
+    <section id="s1">
+      <h2><span class="num">01</span> Qué es el sistema</h2>
+      <p>
+        Un sistema de contabilidad por <strong>partida doble</strong> completo:
+        registra las operaciones de un negocio y produce los estados contables
+        clásicos. Tiene tres partes.
+      </p>
+      <div class="tabla-scroll">
+        <table>
+          <thead>
+            <tr><th>Parte</th><th>Qué es</th><th>Dónde vive</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>API REST</strong></td><td>Toda la lógica contable y las validaciones</td><td><code>app/</code></td></tr>
+            <tr><td><strong>Interfaz web</strong></td><td>Pantallas para operar el sistema</td><td><code>frontend/</code></td></tr>
+            <tr><td><strong>Base de datos</strong></td><td>PostgreSQL, con migraciones versionadas</td><td><code>alembic/</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>Funcionalidad implementada</h3>
+      <ul>
+        <li>Plan de cuentas jerárquico, con cuentas sumarias y de detalle</li>
+        <li>Asientos con validación de partida doble en dos capas</li>
+        <li>Reversión de asientos: no se editan, se corrigen con un contra-asiento</li>
+        <li>Libro mayor por cuenta, con saldo corriente</li>
+        <li>Balance de comprobación, estado de resultados y balance general</li>
+        <li>Exportación de los cuatro reportes a CSV</li>
+        <li>Cierre de ejercicio</li>
+        <li>Usuarios con roles: admin, contador y lector</li>
+        <li>Auditoría: cada asiento guarda quién lo cargó</li>
+        <li>102 tests de backend y 20 de frontend, corriendo en CI</li>
+      </ul>
+    </section>
+
+    <!-- 2 -->
+    <section id="s2">
+      <h2><span class="num">02</span> Cómo levantarlo</h2>
+      <h3>Con Docker</h3>
+      <pre><code>docker compose up -d --build</code></pre>
+      <p>Un solo comando levanta todo. Entrá a <strong>http://localhost:8001</strong>.</p>
+      <p>Qué hace por dentro:</p>
+      <ol>
+        <li>Levanta PostgreSQL 16 y espera a que pase su <em>healthcheck</em> (<code>pg_isready</code>). Sin esa espera, la API arrancaría antes que la base y fallaría al migrar.</li>
+        <li>Compila la interfaz web, en la etapa <code>node:22-slim</code> del <code>Dockerfile</code>.</li>
+        <li>Aplica las migraciones (<code>alembic upgrade head</code>).</li>
+        <li>Arranca <code>uvicorn</code>, que sirve la API <strong>y</strong> la interfaz.</li>
+      </ol>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Servicio</th><th>Puerto</th><th>Nota</th></tr></thead>
+          <tbody>
+            <tr><td>Interfaz web + API</td><td><code>8001</code></td><td>Se usan 8001/5433 y no 8000/5432 para no chocar con otros proyectos locales</td></tr>
+            <tr><td>PostgreSQL</td><td><code>5433</code></td><td>Datos en el volumen <code>contable_pgdata</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre><code>docker compose logs -f api     # ver logs
+docker compose down            # bajar, conservando los datos
+docker compose down -v         # bajar y borrar la base</code></pre>
+      <h3>Para desarrollar</h3>
+      <pre><code># Backend
+python -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install -r requirements-dev.txt
+alembic upgrade head
+uvicorn app.main:app --reload          # :8000
+
+# Frontend (otra terminal) — requiere Node 22+
+cd frontend &amp;&amp; npm install &amp;&amp; npm run dev   # :5173</code></pre>
+      <div class="nota">
+        <span class="nota__label">Primer uso</span>
+        <p>
+          El primer usuario que se registre queda <strong>admin</strong>
+          automáticamente. Después de eso el registro se cierra, y solo un admin
+          puede crear usuarios.
+        </p>
+      </div>
+    </section>
+
+    <!-- 3 -->
+    <section id="s3">
+      <h2><span class="num">03</span> Fundamentos contables</h2>
+      <p>Necesario para entender el resto del documento.</p>
+
+      <h3>Partida doble</h3>
+      <p>
+        Toda operación se registra en un <strong>asiento</strong>, compuesto por
+        al menos dos <strong>movimientos</strong> (líneas). Cada línea es un
+        <strong>débito</strong> o un <strong>crédito</strong> sobre una cuenta, y
+        en cada asiento la suma de débitos iguala la suma de créditos.
+      </p>
+      <div class="tabla-scroll">
+        <table>
+          <caption>Aporte de capital de 500.000: entra dinero a la caja y nace una obligación con el socio</caption>
+          <thead><tr><th>Cuenta</th><th class="n">Débito</th><th class="n">Crédito</th></tr></thead>
+          <tbody>
+            <tr><td>Caja</td><td class="n">500.000</td><td class="n"></td></tr>
+            <tr><td>Capital social</td><td class="n"></td><td class="n">500.000</td></tr>
+            <tr class="total"><td>Total</td><td class="n">500.000</td><td class="n">500.000</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Naturaleza de las cuentas</h3>
+      <p>
+        Un débito no significa «sumar» ni un crédito «restar»: depende de la
+        naturaleza de la cuenta.
+      </p>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Naturaleza</th><th>Tipos de cuenta</th><th>El saldo sube con</th><th>Baja con</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Deudora</strong></td><td>Activo, Gasto, Costo</td><td>Débito</td><td>Crédito</td></tr>
+            <tr><td><strong>Acreedora</strong></td><td>Pasivo, Patrimonio, Ingreso</td><td>Crédito</td><td>Débito</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>En el código es una sola función, en <code>app/crud/agregados.py</code>:</p>
+      <pre><code>def signo_naturaleza(naturaleza):
+    return 1 if naturaleza == NaturalezaCuenta.DEUDORA else -1</code></pre>
+      <p>
+        y el saldo de cualquier cuenta se calcula igual para todas:
+        <code>saldo = signo × (débitos − créditos)</code>.
+      </p>
+
+      <h3>Ecuación fundamental</h3>
+      <p class="ecuacion">Activo = Pasivo + Patrimonio</p>
+      <p>
+        Si la contabilidad está bien registrada esto se cumple
+        <strong>siempre</strong>. El balance general lo verifica y lo expone en
+        el campo <code>balanceado</code>.
+      </p>
+
+      <h3>Cuentas reales y cuentas nominales</h3>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th></th><th>Cuentas reales</th><th>Cuentas nominales</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Tipos</strong></td><td>Activo, Pasivo, Patrimonio</td><td>Ingreso, Costo, Gasto</td></tr>
+            <tr><td><strong>Qué miden</strong></td><td>Una foto: cuánto hay <em>hoy</em></td><td>Una película: cuánto pasó <em>en un período</em></td></tr>
+            <tr><td><strong>Reporte</strong></td><td>Balance general</td><td>Estado de resultados</td></tr>
+            <tr><td><strong>Al cerrar el ejercicio</strong></td><td>Siguen su curso</td><td>Se saldan a cero</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Esta distinción es la clave del <a href="#s8">cierre de ejercicio</a>.</p>
+    </section>
+
+    <!-- 4 -->
+    <section id="s4">
+      <h2><span class="num">04</span> El plan de cuentas, cuenta por cuenta</h2>
+      <p>
+        El plan de cuentas es un <strong>árbol</strong>. Cada cuenta puede tener
+        una cuenta padre (<code>padre_id → cuentas.id</code>), lo que permite
+        agrupar y totalizar.
+      </p>
+
+      <h3>Sumarias y de detalle</h3>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th></th><th>Cuenta sumaria</th><th>Cuenta de detalle</th></tr></thead>
+          <tbody>
+            <tr><td>Tiene hijas</td><td>Sí</td><td>No: es una hoja del árbol</td></tr>
+            <tr><td><code>acepta_movimiento</code></td><td><code>False</code></td><td><code>True</code></td></tr>
+            <tr><td>Recibe asientos</td><td><strong>No</strong></td><td>Sí</td></tr>
+            <tr><td>Para qué sirve</td><td>Agrupar y totalizar</td><td>Registrar operaciones</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="nota">
+        <span class="nota__label">Automatismo</span>
+        <p>
+          Cuando una cuenta gana su primera hija, el sistema la marca sola como
+          sumaria. Está en <code>app/crud/cuenta.py</code>:
+        </p>
+        <pre><code>if padre is not None and padre.acepta_movimiento:
+    # Una cuenta que gana una hija pasa a ser "sumaria": deja de aceptar
+    # movimientos directos de asientos contables.
+    padre.acepta_movimiento = False</code></pre>
+        <p>
+          Sin esto se podría cargar un movimiento en «Activo» <em>y</em> en
+          «Caja», y los totales quedarían inflados al sumar el padre con las
+          hijas.
+        </p>
+      </div>
+
+      <h3>El plan de cuentas de ejemplo</h3>
+      <p>Este es el plan cargado en la demostración: 20 cuentas, tres niveles.</p>
+
+      <h4>1 — Activo</h4>
+      <p>Todo lo que el negocio <strong>tiene</strong>. Naturaleza deudora.</p>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Qué representa</th><th>Cuándo se mueve</th></tr></thead>
+          <tbody>
+            <tr><td><code>1</code></td><td>Activo</td><td class="sub">sumaria</td><td>Agrupa todo el activo</td><td>Nunca</td></tr>
+            <tr><td><code>1.1</code></td><td>Activo corriente</td><td class="sub">sumaria</td><td>Bienes que se vuelven dinero en menos de un año</td><td>Nunca</td></tr>
+            <tr><td><code>1.1.01</code></td><td><strong>Caja</strong></td><td>activo</td><td>Efectivo en el negocio</td><td><strong>Débito:</strong> entra plata. <strong>Crédito:</strong> sale</td></tr>
+            <tr><td><code>1.1.02</code></td><td><strong>Banco</strong></td><td>activo</td><td>Saldo en la cuenta bancaria</td><td><strong>Débito:</strong> depósitos. <strong>Crédito:</strong> pagos por transferencia</td></tr>
+            <tr><td><code>1.1.03</code></td><td><strong>Cuentas por cobrar</strong></td><td>activo</td><td>Lo que los clientes deben</td><td><strong>Débito:</strong> venta a crédito. <strong>Crédito:</strong> el cliente paga</td></tr>
+            <tr><td><code>1.1.04</code></td><td><strong>Mercaderías</strong></td><td>activo</td><td>Stock para vender, valuado al costo</td><td><strong>Débito:</strong> se compra. <strong>Crédito:</strong> se vende</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="nota">
+        <span class="nota__label">Sobre Mercaderías</span>
+        <p>
+          El sistema usa <em>inventario permanente</em>. Comprar stock
+          <strong>no es un gasto</strong>: es cambiar dinero por mercadería, dos
+          activos. El costo recién impacta el resultado cuando la mercadería se
+          vende, con un asiento aparte que acredita Mercaderías y debita Costo de
+          mercaderías vendidas. Por eso cada venta genera <strong>dos</strong>
+          asientos: uno por el ingreso y otro por el costo.
+        </p>
+      </div>
+
+      <h4>2 — Pasivo</h4>
+      <p>Todo lo que el negocio <strong>debe</strong>. Naturaleza acreedora.</p>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Qué representa</th><th>Cuándo se mueve</th></tr></thead>
+          <tbody>
+            <tr><td><code>2</code></td><td>Pasivo</td><td class="sub">sumaria</td><td>Agrupa todas las deudas</td><td>Nunca</td></tr>
+            <tr><td><code>2.1</code></td><td>Pasivo corriente</td><td class="sub">sumaria</td><td>Deudas exigibles en menos de un año</td><td>Nunca</td></tr>
+            <tr><td><code>2.1.01</code></td><td><strong>Proveedores</strong></td><td>pasivo</td><td>Deuda por mercadería comprada a crédito</td><td><strong>Crédito:</strong> nace la deuda. <strong>Débito:</strong> se paga</td></tr>
+            <tr><td><code>2.1.02</code></td><td><strong>Sueldos a pagar</strong></td><td>pasivo</td><td>Sueldos devengados y no pagados</td><td><strong>Crédito:</strong> se liquida el mes. <strong>Débito:</strong> se paga</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>3 — Patrimonio</h4>
+      <p>Lo que queda para los dueños: <code>Activo − Pasivo</code>. Naturaleza acreedora.</p>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Qué representa</th><th>Cuándo se mueve</th></tr></thead>
+          <tbody>
+            <tr><td><code>3</code></td><td>Patrimonio</td><td class="sub">sumaria</td><td>Agrupa el patrimonio</td><td>Nunca</td></tr>
+            <tr><td><code>3.1.01</code></td><td><strong>Capital social</strong></td><td>patrimonio</td><td>Aportes de los socios</td><td><strong>Crédito:</strong> un socio aporta. También recibe el resultado al cerrar el ejercicio</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>4 — Ingresos <span class="sub">(nominal)</span></h4>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Qué representa</th><th>Cuándo se mueve</th></tr></thead>
+          <tbody>
+            <tr><td><code>4</code></td><td>Ingresos</td><td class="sub">sumaria</td><td>Agrupa los ingresos</td><td>Nunca</td></tr>
+            <tr><td><code>4.1.01</code></td><td><strong>Ventas</strong></td><td>ingreso</td><td>Facturación por ventas</td><td><strong>Crédito:</strong> se vende. <strong>Débito:</strong> devoluciones o cierre</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>5 — Costos <span class="sub">(nominal)</span></h4>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Qué representa</th><th>Cuándo se mueve</th></tr></thead>
+          <tbody>
+            <tr><td><code>5</code></td><td>Costos</td><td class="sub">sumaria</td><td>Agrupa los costos</td><td>Nunca</td></tr>
+            <tr><td><code>5.1.01</code></td><td><strong>Costo de mercaderías vendidas</strong></td><td>costo</td><td>Cuánto costó lo que se vendió</td><td><strong>Débito:</strong> al vender, contra Mercaderías</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="nota">
+        <span class="nota__label">Costo o gasto</span>
+        <p>
+          El costo está atado a lo que se vende: si no vendés, no hay costo. El
+          gasto existe igual — el alquiler se paga vendas o no. Separarlos
+          permite calcular la <strong>utilidad bruta</strong>
+          (<code>ingresos − costos</code>), que muestra el margen del negocio
+          antes de la estructura.
+        </p>
+      </div>
+
+      <h4>6 — Gastos <span class="sub">(nominal)</span></h4>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Qué representa</th><th>Cuándo se mueve</th></tr></thead>
+          <tbody>
+            <tr><td><code>6</code></td><td>Gastos</td><td class="sub">sumaria</td><td>Agrupa los gastos</td><td>Nunca</td></tr>
+            <tr><td><code>6.1.01</code></td><td><strong>Sueldos</strong></td><td>gasto</td><td>Remuneraciones del período</td><td><strong>Débito:</strong> al liquidar sueldos</td></tr>
+            <tr><td><code>6.1.02</code></td><td><strong>Alquiler</strong></td><td>gasto</td><td>Alquiler del local</td><td><strong>Débito:</strong> al devengar el mes</td></tr>
+            <tr><td><code>6.1.03</code></td><td><strong>Servicios</strong></td><td>gasto</td><td>Luz, agua, internet</td><td><strong>Débito:</strong> al recibir las facturas</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Cómo se arma el plan</h3>
+      <p>
+        El orden importa: <strong>primero los padres</strong>, porque el padre se
+        vuelve sumario al recibir la primera hija.
+      </p>
+      <pre><code># 1) La raíz
+POST /api/v1/cuentas/  {"codigo": "1", "nombre": "Activo", "tipo": "activo"}
+# → nivel 1, acepta_movimiento: true
+
+# 2) Una hija: el padre pasa a sumario automáticamente
+POST /api/v1/cuentas/  {"codigo": "1.1", "nombre": "Activo corriente",
+                        "tipo": "activo", "padre_id": 1}
+# → nivel 2. La cuenta 1 queda con acepta_movimiento: false
+
+# 3) La hoja, que sí recibe movimientos
+POST /api/v1/cuentas/  {"codigo": "1.1.01", "nombre": "Caja",
+                        "tipo": "activo", "padre_id": 2}
+# → nivel 3, acepta_movimiento: true</code></pre>
+      <p>
+        La <code>naturaleza</code> <strong>no hace falta enviarla</strong>: se
+        deduce del <code>tipo</code> mediante <code>NATURALEZA_POR_TIPO</code>.
+        Se puede sobrescribir explícitamente para cuentas de naturaleza
+        contraria, como <em>Depreciación acumulada</em>: es un activo, pero de
+        naturaleza acreedora porque resta.
+      </p>
+
+      <h3>Protecciones al borrar</h3>
+      <p>Borrar una cuenta se rechaza con <code>409</code> si:</p>
+      <ol>
+        <li>Tiene cuentas hijas → <code>CuentaConHijasError</code></li>
+        <li>Tiene movimientos contables → <code>CuentaConMovimientosError</code></li>
+      </ol>
+      <p>
+        Ambas se validan en la aplicación además del
+        <code>FOREIGN KEY … RESTRICT</code> de la base: SQLite, que usan los
+        tests, no aplica las <em>foreign keys</em> sin activar un <em>pragma</em>,
+        y además el mensaje propio es más claro que un
+        <code>IntegrityError</code> genérico.
+      </p>
+    </section>
+
+    <!-- 5 -->
+    <section id="s5">
+      <h2><span class="num">05</span> Modelo de datos, tabla por tabla</h2>
+      <pre><code>usuarios ──&lt; asientos ──&lt; movimientos_contables &gt;── cuentas
+                 │                                     │
+                 └──&lt; cierres &gt;────────────────────────┘
+             (asientos.reversa_de_id → asientos.id, autorreferencia)
+             (cuentas.padre_id       → cuentas.id,  autorreferencia)</code></pre>
+
+      <h3><code>cuentas</code> — el plan de cuentas</h3>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Columna</th><th>Tipo</th><th>Para qué</th></tr></thead>
+          <tbody>
+            <tr><td><code>id</code></td><td>int PK</td><td></td></tr>
+            <tr><td><code>codigo</code></td><td>varchar(20) único</td><td>Código contable (<code>1.1.01</code>)</td></tr>
+            <tr><td><code>nombre</code></td><td>varchar(150)</td><td></td></tr>
+            <tr><td><code>tipo</code></td><td>enum</td><td><code>activo</code>, <code>pasivo</code>, <code>patrimonio</code>, <code>ingreso</code>, <code>gasto</code>, <code>costo</code></td></tr>
+            <tr><td><code>naturaleza</code></td><td>enum</td><td><code>deudora</code> o <code>acreedora</code>; se autocompleta según el tipo</td></tr>
+            <tr><td><code>nivel</code></td><td>int</td><td>Profundidad en el árbol; se calcula como <code>padre.nivel + 1</code></td></tr>
+            <tr><td><code>padre_id</code></td><td>int FK → <code>cuentas.id</code></td><td>Autorreferencia. <code>ON DELETE RESTRICT</code></td></tr>
+            <tr><td><code>acepta_movimiento</code></td><td>bool</td><td><code>False</code> en las sumarias</td></tr>
+            <tr><td><code>activa</code></td><td>bool</td><td>Baja lógica: no admite asientos nuevos, conserva su historial</td></tr>
+            <tr><td><code>descripcion</code></td><td>text</td><td>Opcional</td></tr>
+            <tr><td><code>created_at</code> / <code>updated_at</code></td><td>timestamptz</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Restricciones: <code>UNIQUE(codigo)</code> y <code>CHECK (nivel &gt;= 1)</code>.</p>
+
+      <h3><code>asientos</code> — el encabezado</h3>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Columna</th><th>Tipo</th><th>Para qué</th></tr></thead>
+          <tbody>
+            <tr><td><code>id</code></td><td>int PK</td><td></td></tr>
+            <tr><td><code>numero</code></td><td>int único</td><td>Correlativo, <code>MAX(numero) + 1</code></td></tr>
+            <tr><td><code>fecha</code></td><td>date</td><td>Fecha contable de la operación</td></tr>
+            <tr><td><code>descripcion</code></td><td>text</td><td></td></tr>
+            <tr><td><code>reversa_de_id</code></td><td>int FK → <code>asientos.id</code></td><td>Si este asiento <em>es</em> una reversión, apunta al original. <code>ON DELETE SET NULL</code></td></tr>
+            <tr><td><code>usuario_id</code></td><td>int FK → <code>usuarios.id</code></td><td>Quién lo cargó. <code>ON DELETE RESTRICT</code></td></tr>
+            <tr><td><code>es_cierre</code></td><td>bool</td><td>Marca los asientos generados por un cierre de ejercicio</td></tr>
+            <tr><td><code>created_at</code> / <code>updated_at</code></td><td>timestamptz</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <code>usuario_id</code> es <em>nullable</em> porque los asientos cargados
+        antes de que existiera la autenticación no tienen autor conocido, y no se
+        puede inventar uno. Los nuevos siempre lo completan.
+      </p>
+
+      <h3><code>movimientos_contables</code> — las líneas</h3>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Columna</th><th>Tipo</th><th>Para qué</th></tr></thead>
+          <tbody>
+            <tr><td><code>id</code></td><td>int PK</td><td></td></tr>
+            <tr><td><code>asiento_id</code></td><td>int FK</td><td><code>ON DELETE CASCADE</code>: las líneas no viven sin su asiento</td></tr>
+            <tr><td><code>cuenta_id</code></td><td>int FK</td><td><code>ON DELETE RESTRICT</code>: no se borra una cuenta con movimientos</td></tr>
+            <tr><td><code>debito</code></td><td>numeric(14,2)</td><td></td></tr>
+            <tr><td><code>credito</code></td><td>numeric(14,2)</td><td></td></tr>
+            <tr><td><code>descripcion</code></td><td>varchar(255)</td><td>Detalle de la línea; opcional</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Tres <code>CHECK</code> en la base, como red ante escrituras que no pasen por la API:</p>
+      <pre><code>CHECK (debito &gt;= 0 AND credito &gt;= 0)        -- montos no negativos
+CHECK (NOT (debito &gt; 0 AND credito &gt; 0))    -- no ambos lados
+CHECK (debito &gt; 0 OR credito &gt; 0)           -- al menos uno</code></pre>
+      <div class="nota">
+        <span class="nota__label">Por qué numeric y no float</span>
+        <p>
+          El punto flotante no representa exactamente los decimales:
+          <code>0.1 + 0.2</code> da <code>0.30000000000000004</code>, y un
+          asiento perfectamente balanceado quedaría descuadrado por un error de
+          redondeo. <code>numeric</code> es exacto.
+        </p>
+      </div>
+
+      <h3><code>usuarios</code></h3>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Columna</th><th>Tipo</th><th>Para qué</th></tr></thead>
+          <tbody>
+            <tr><td><code>id</code></td><td>int PK</td><td></td></tr>
+            <tr><td><code>email</code></td><td>varchar(255) único</td><td>Se guarda siempre en minúsculas</td></tr>
+            <tr><td><code>nombre</code></td><td>varchar(150)</td><td></td></tr>
+            <tr><td><code>hashed_password</code></td><td>varchar(255)</td><td>Hash bcrypt, 60 caracteres</td></tr>
+            <tr><td><code>rol</code></td><td>enum</td><td><code>admin</code>, <code>contador</code> o <code>lector</code></td></tr>
+            <tr><td><code>activo</code></td><td>bool</td><td>Baja lógica</td></tr>
+            <tr><td><code>created_at</code></td><td>timestamptz</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>La relación con asientos lleva <code>passive_deletes="all"</code>, y el comentario del código explica por qué es imprescindible:</p>
+      <pre><code># passive_deletes="all": sin esto, al borrar un usuario SQLAlchemy pone
+# usuario_id=NULL en sus asientos y el borrado "funciona", dejándolos sin
+# autor. Con esto no toca las hijas y deja actuar al ON DELETE RESTRICT
+# de la base, que es lo que preserva la trazabilidad.</code></pre>
+
+      <h3><code>cierres</code></h3>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Columna</th><th>Tipo</th><th>Para qué</th></tr></thead>
+          <tbody>
+            <tr><td><code>id</code></td><td>int PK</td><td></td></tr>
+            <tr><td><code>fecha_cierre</code></td><td>date único</td><td>Fecha de corte del ejercicio cerrado</td></tr>
+            <tr><td><code>asiento_id</code></td><td>int FK</td><td>El asiento de cierre generado. <code>RESTRICT</code></td></tr>
+            <tr><td><code>cuenta_resultado_id</code></td><td>int FK</td><td>Cuenta de patrimonio que recibió el resultado. <code>RESTRICT</code></td></tr>
+            <tr><td><code>usuario_id</code></td><td>int FK</td><td>Quién cerró. <code>RESTRICT</code></td></tr>
+            <tr><td><code>utilidad_neta</code></td><td>numeric(14,2)</td><td>Resultado trasladado</td></tr>
+            <tr><td><code>created_at</code></td><td>timestamptz</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Guarda el resultado en lugar de recalcularlo, para que quede auditable
+        exactamente qué se cerró, cuándo y por cuánto.
+      </p>
+    </section>
+
+    <!-- 6 -->
+    <section id="s6">
+      <h2><span class="num">06</span> La API, endpoint por endpoint</h2>
+      <p>Prefijo <code>/api/v1</code>. Documentación interactiva en <code>/docs</code>.</p>
+      <div class="leyenda">
+        <span><span class="chip chip--publico">público</span> sin autenticación</span>
+        <span><span class="chip chip--sesion">sesión</span> cualquier usuario autenticado</span>
+        <span><span class="chip chip--escribe">escritura</span> admin o contador</span>
+        <span><span class="chip chip--admin">admin</span> solo admin</span>
+      </div>
+
+      <h3>Autenticación</h3>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Método</th><th>Ruta</th><th>Permiso</th><th>Qué hace</th></tr></thead>
+          <tbody>
+            <tr><td><code>POST</code></td><td><code>/auth/registrar</code></td><td><span class="chip chip--publico">público</span> <span class="chip chip--admin">admin</span></td><td>Crea un usuario. <strong>Público solo si no existe ninguno</strong> (crea el admin inicial); después exige admin</td></tr>
+            <tr><td><code>POST</code></td><td><code>/auth/login</code></td><td><span class="chip chip--publico">público</span></td><td>Devuelve el JWT. Formulario <code>username</code> (el email) + <code>password</code></td></tr>
+            <tr><td><code>GET</code></td><td><code>/auth/me</code></td><td><span class="chip chip--sesion">sesión</span></td><td>Datos del usuario de la sesión</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Plan de cuentas</h3>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Método</th><th>Ruta</th><th>Permiso</th><th>Qué hace</th></tr></thead>
+          <tbody>
+            <tr><td><code>POST</code></td><td><code>/cuentas/</code></td><td><span class="chip chip--escribe">escritura</span></td><td>Crea una cuenta. <code>409</code> si el código existe; <code>400</code> si el padre no existe</td></tr>
+            <tr><td><code>GET</code></td><td><code>/cuentas/</code></td><td><span class="chip chip--sesion">sesión</span></td><td>Lista plana, con <code>skip</code>/<code>limit</code></td></tr>
+            <tr><td><code>GET</code></td><td><code>/cuentas/arbol</code></td><td><span class="chip chip--sesion">sesión</span></td><td>Árbol jerárquico anidado</td></tr>
+            <tr><td><code>GET</code></td><td><code>/cuentas/{id}</code></td><td><span class="chip chip--sesion">sesión</span></td><td>Una cuenta</td></tr>
+            <tr><td><code>PATCH</code></td><td><code>/cuentas/{id}</code></td><td><span class="chip chip--escribe">escritura</span></td><td>Modificación parcial</td></tr>
+            <tr><td><code>DELETE</code></td><td><code>/cuentas/{id}</code></td><td><span class="chip chip--escribe">escritura</span></td><td><code>409</code> si tiene hijas o movimientos</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Asientos</h3>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Método</th><th>Ruta</th><th>Permiso</th><th>Qué hace</th></tr></thead>
+          <tbody>
+            <tr><td><code>POST</code></td><td><code>/asientos/</code></td><td><span class="chip chip--escribe">escritura</span></td><td>Crea un asiento. <code>422</code> si no balancea; <code>400</code> si una cuenta es sumaria o está inactiva</td></tr>
+            <tr><td><code>GET</code></td><td><code>/asientos/</code></td><td><span class="chip chip--sesion">sesión</span></td><td>Lista paginada con filtros</td></tr>
+            <tr><td><code>GET</code></td><td><code>/asientos/{id}</code></td><td><span class="chip chip--sesion">sesión</span></td><td>Un asiento con sus líneas</td></tr>
+            <tr><td><code>POST</code></td><td><code>/asientos/{id}/reversar</code></td><td><span class="chip chip--escribe">escritura</span></td><td>Genera la reversión. <code>409</code> si ya fue reversado</td></tr>
+            <tr><td><code>DELETE</code></td><td><code>/asientos/{id}</code></td><td><span class="chip chip--escribe">escritura</span></td><td>Borra en cascada sus líneas. <code>409</code> si ya fue reversado</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <code>GET /asientos/</code> acepta <code>skip</code>, <code>limit</code>
+        (máximo 500), <code>fecha_desde</code>, <code>fecha_hasta</code> y
+        <code>cuenta_id</code>, y responde:
+      </p>
+      <pre><code>{ "total": 22, "skip": 0, "limit": 100, "items": [ ... ] }</code></pre>
+      <p>
+        <code>total</code> sale de un <code>COUNT</code> aparte con los mismos
+        filtros, para que el cliente sepa cuántas páginas hay sin traer todos los
+        registros.
+      </p>
+
+      <h3>Reportes</h3>
+      <p>Los cuatro aceptan <code>?formato=csv</code> para descargar el archivo.</p>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Método</th><th>Ruta</th><th>Permiso</th><th>Parámetros</th></tr></thead>
+          <tbody>
+            <tr><td><code>GET</code></td><td><code>/libro-mayor/{cuenta_id}</code></td><td><span class="chip chip--sesion">sesión</span></td><td><code>fecha_desde</code>, <code>fecha_hasta</code>, <code>formato</code></td></tr>
+            <tr><td><code>GET</code></td><td><code>/balance-comprobacion/</code></td><td><span class="chip chip--sesion">sesión</span></td><td><code>fecha_desde</code>, <code>fecha_hasta</code>, <code>formato</code></td></tr>
+            <tr><td><code>GET</code></td><td><code>/estado-resultados/</code></td><td><span class="chip chip--sesion">sesión</span></td><td><code>fecha_desde</code>, <code>fecha_hasta</code>, <code>formato</code></td></tr>
+            <tr><td><code>GET</code></td><td><code>/balance-general/</code></td><td><span class="chip chip--sesion">sesión</span></td><td><code>fecha_corte</code>, <code>formato</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Cierre de ejercicio y usuarios</h3>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Método</th><th>Ruta</th><th>Permiso</th><th>Qué hace</th></tr></thead>
+          <tbody>
+            <tr><td><code>POST</code></td><td><code>/cierres/</code></td><td><span class="chip chip--admin">admin</span></td><td>Cierra el ejercicio. <code>400</code> si la cuenta no es de patrimonio o no hay nada que cerrar; <code>409</code> si ya hay un cierre en esa fecha o posterior</td></tr>
+            <tr><td><code>GET</code></td><td><code>/cierres/</code></td><td><span class="chip chip--sesion">sesión</span></td><td>Historial de cierres</td></tr>
+            <tr><td><code>GET</code></td><td><code>/usuarios/</code></td><td><span class="chip chip--admin">admin</span></td><td>Lista de usuarios</td></tr>
+            <tr><td><code>PATCH</code></td><td><code>/usuarios/{id}</code></td><td><span class="chip chip--admin">admin</span></td><td>Cambia <code>rol</code> o <code>activo</code>. <code>400</code> si es uno mismo</td></tr>
+            <tr><td><code>DELETE</code></td><td><code>/usuarios/{id}</code></td><td><span class="chip chip--admin">admin</span></td><td><code>400</code> si es uno mismo; <code>409</code> si tiene asientos o cierres</td></tr>
+            <tr><td><code>GET</code></td><td><code>/health</code></td><td><span class="chip chip--publico">público</span></td><td><code>{"status": "ok"}</code></td></tr>
+            <tr><td><code>GET</code></td><td><code>/docs</code></td><td><span class="chip chip--publico">público</span></td><td>Swagger UI</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 7 -->
+    <section id="s7">
+      <h2><span class="num">07</span> Cómo se calcula cada reporte</h2>
+      <p>
+        Los cuatro comparten dos ayudantes en <code>app/crud/agregados.py</code>:
+        <code>signo_naturaleza()</code> y <code>sumar_por_cuenta()</code>, que
+        agrega débitos y créditos por cuenta con un solo <code>GROUP BY</code> en
+        SQL en lugar de iterar cuenta por cuenta.
+      </p>
+
+      <h3>Libro mayor</h3>
+      <p>El detalle de una cuenta con su saldo corriendo.</p>
+      <ol>
+        <li><strong>Saldo inicial:</strong> si se pasa <code>fecha_desde</code>, suma los movimientos <em>anteriores</em> a esa fecha. Si no, arranca en cero.</li>
+        <li><strong>Movimientos del rango:</strong> ordenados por fecha, número de asiento y línea.</li>
+        <li><strong>Saldo corriente:</strong> por cada línea, <code>saldo += signo × (débito − crédito)</code>.</li>
+        <li><strong>Totales:</strong> <code>total_debitos</code>, <code>total_creditos</code>, <code>saldo_final</code>.</li>
+      </ol>
+
+      <h3>Balance de comprobación</h3>
+      <p>
+        Una fila por cada cuenta de detalle activa, <strong>incluidas las que no
+        tuvieron movimientos</strong> (aparecen en cero). Por cada cuenta:
+        <code>saldo_inicial</code>, <code>debito</code> y <code>credito</code> del
+        período, y <code>saldo_final</code>. Al final, los totales globales y un
+        booleano <code>balanceado</code>.
+      </p>
+      <p>
+        Por construcción de la partida doble, <code>balanceado</code> debería dar
+        <strong>siempre</strong> <code>true</code>: ese es justamente el propósito
+        del reporte. Si diera <code>false</code>, sería señal de que algo escribió
+        en <code>movimientos_contables</code> sin pasar por la validación de la
+        API.
+      </p>
+
+      <h3>Estado de resultados</h3>
+      <p>Reporte de <strong>período</strong>.</p>
+      <pre><code>utilidad_bruta = total_ingresos − total_costos
+utilidad_neta  = utilidad_bruta − total_gastos</code></pre>
+      <ul>
+        <li><strong>Omite las cuentas sin actividad</strong> en el rango, a diferencia del balance de comprobación. Un estado de resultados no debería listar todas las cuentas nominales que existen, sino la actividad real del período.</li>
+        <li><strong>Excluye los asientos de cierre.</strong> El asiento de cierre salda las cuentas nominales; si se contara, un ejercicio ya cerrado reportaría ingresos y gastos en cero.</li>
+      </ul>
+
+      <h3>Balance general</h3>
+      <p>
+        Saldos acumulados de activo, pasivo y patrimonio a una fecha de corte.
+        Acá está la parte más sutil del sistema.
+      </p>
+      <p>
+        Las cuentas nominales acumulan un resultado que <strong>no está
+        reflejado en ninguna cuenta real</strong> hasta que se cierra el
+        ejercicio. Sin corregir eso, el balance no cuadraría ante cualquier venta
+        o gasto registrado. La solución: calcular ese resultado en vivo y sumarlo
+        al patrimonio como <code>resultado_acumulado</code>.
+      </p>
+      <pre><code>resultado_acumulado = get_estado_resultados(
+    db, fecha_desde=None, fecha_hasta=fecha_corte, incluir_cierres=True
+)["utilidad_neta"]
+
+total_patrimonio = total_patrimonio_cuentas + resultado_acumulado
+balanceado = total_activo == total_pasivo + total_patrimonio</code></pre>
+      <p>
+        El <code>incluir_cierres=True</code> es lo que hace que esto siga siendo
+        correcto después de un cierre, y es exactamente lo contrario de lo que
+        necesita el estado de resultados:
+      </p>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Reporte</th><th>Asientos de cierre</th><th>Si se hiciera al revés</th></tr></thead>
+          <tbody>
+            <tr><td>Estado de resultados</td><td><strong>Excluidos</strong></td><td>Un período cerrado mostraría todo en cero</td></tr>
+            <tr><td>Balance general</td><td><strong>Incluidos</strong></td><td>La utilidad se contaría <strong>dos veces</strong>: una en la cuenta de patrimonio y otra en vivo</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Después de un cierre el neto de las nominales da cero, entonces
+        <code>resultado_acumulado</code> pasa a <code>0</code> y la utilidad queda
+        contada una sola vez, en la cuenta de patrimonio. El balance sigue
+        cuadrando.
+      </p>
+
+      <h3>Exportación a CSV</h3>
+      <p>
+        <code>app/utils/csv_export.py</code>, con el módulo <code>csv</code> de la
+        biblioteca estándar. Se eligió CSV antes que Excel o PDF: no agrega
+        dependencias, Excel lo abre igual, y evita romperse por desactualización
+        de librerías de terceros. Los reportes con secciones se aplanan a filas
+        con una columna <code>seccion</code>, y llevan totales al final.
+      </p>
+      <p>
+        Estos endpoints declaran <code>response_model=None</code> porque devuelven
+        JSON o CSV según el parámetro; el costo es que <code>/docs</code> no puede
+        mostrar el esquema de respuesta para ellos.
+      </p>
+    </section>
+
+    <!-- 8 -->
+    <section id="s8">
+      <h2><span class="num">08</span> Cierre de ejercicio, paso a paso</h2>
+      <p>
+        Cerrar el ejercicio significa <strong>saldar a cero las cuentas
+        nominales</strong> (ingreso, costo, gasto) trasladando su resultado neto a
+        una cuenta de patrimonio. Es lo que separa un ejercicio del siguiente: el
+        año nuevo arranca con las cuentas de resultado en cero.
+      </p>
+
+      <h3>Qué hace, paso a paso</h3>
+      <ol>
+        <li><strong>Valida la cuenta destino.</strong> Tiene que ser de tipo <code>patrimonio</code>, aceptar movimientos y estar activa. El resultado del ejercicio no puede ir a un activo o a un gasto.</li>
+        <li><strong>Verifica que no haya un cierre igual o posterior.</strong> Si ya se cerró al 31/03, no se puede volver a cerrar en esa fecha ni antes → <code>409</code>.</li>
+        <li><strong>Calcula el saldo de cada cuenta nominal</strong>, incluyendo los asientos de cierres anteriores. Eso hace que <strong>lo ya cerrado dé cero</strong> y solo se cierre la actividad posterior, sin necesidad de llevar registro del último cierre.</li>
+        <li><strong>Contra-asienta cada saldo.</strong> Una cuenta con saldo deudor se cancela con un crédito por el mismo importe, y viceversa. Las cuentas ya saldadas se omiten.</li>
+        <li><strong>Agrega la línea del resultado</strong> en la cuenta de patrimonio. Si hay utilidad va al crédito; si hay pérdida, al débito.</li>
+        <li><strong>Marca el asiento con <code>es_cierre=True</code></strong> y guarda el registro en <code>cierres</code>.</li>
+      </ol>
+      <pre><code>sumas = sumar_por_cuenta(
+    db, cuenta_ids={c.id for c in nominales}, hasta=fecha_cierre, incluir_cierres=True
+)</code></pre>
+      <p>
+        Gastos y costos suman al neto deudor; los ingresos lo restan. Por eso la
+        utilidad es el neto deudor con el signo cambiado.
+      </p>
+
+      <div class="nota">
+        <span class="nota__label">El caso de la utilidad exactamente cero</span>
+        <p>Si ingresos, costos y gastos se compensan exactamente, no se agrega la línea de resultado:</p>
+        <pre><code># Con utilidad exactamente cero no se agrega la línea de resultado: sería
+# un movimiento de 0/0 y violaría el CHECK que exige débito o crédito
+# mayor a cero. El asiento igual queda balanceado, porque las líneas que
+# saldan las cuentas nominales ya suman cero entre sí.</code></pre>
+      </div>
+
+      <h3>Ejemplo con los datos de la demostración</h3>
+      <p>
+        Al 31/03/2026: ingresos 550.000, costos 295.000, gastos 182.000 →
+        <strong>utilidad 73.000</strong>. Si se cerrara contra Capital social, el
+        asiento generado sería:
+      </p>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Cuenta</th><th class="n">Débito</th><th class="n">Crédito</th><th>Por qué</th></tr></thead>
+          <tbody>
+            <tr><td><code>4.1.01</code> Ventas</td><td class="n">550.000</td><td class="n"></td><td>Salda el saldo acreedor</td></tr>
+            <tr><td><code>5.1.01</code> Costo de mercaderías</td><td class="n"></td><td class="n">295.000</td><td>Salda el saldo deudor</td></tr>
+            <tr><td><code>6.1.01</code> Sueldos</td><td class="n"></td><td class="n">80.000</td><td>Salda el saldo deudor</td></tr>
+            <tr><td><code>6.1.02</code> Alquiler</td><td class="n"></td><td class="n">90.000</td><td>Salda el saldo deudor</td></tr>
+            <tr><td><code>6.1.03</code> Servicios</td><td class="n"></td><td class="n">12.000</td><td>Salda el saldo deudor</td></tr>
+            <tr><td><code>3.1.01</code> Capital social</td><td class="n"></td><td class="n">73.000</td><td>Recibe la utilidad</td></tr>
+            <tr class="total"><td>Total</td><td class="n">550.000</td><td class="n">550.000</td><td>Balanceado</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Después del cierre:</p>
+      <ul>
+        <li>Las cuentas nominales quedan en <strong>cero</strong>.</li>
+        <li>Capital social pasa de 500.000 a <strong>573.000</strong>.</li>
+        <li>En el balance general, <code>resultado_acumulado</code> pasa a <strong>0</strong> y el total de patrimonio no cambia: la utilidad ahora está en la cuenta real.</li>
+        <li>El estado de resultados del período <strong>sigue mostrando</strong> los 550.000 de ingresos, porque excluye los asientos de cierre.</li>
+      </ul>
+      <p>
+        Solo un <strong>admin</strong> puede cerrar: es una operación que
+        reescribe la lectura de todo un período.
+      </p>
+    </section>
+
+    <!-- 9 -->
+    <section id="s9">
+      <h2><span class="num">09</span> Autenticación, roles y permisos</h2>
+      <h3>Cómo funciona el login</h3>
+      <ol>
+        <li><code>POST /auth/login</code> con <code>username</code> (el <strong>email</strong>) y <code>password</code>, como formulario — lo exige el estándar OAuth2.</li>
+        <li>El backend verifica el hash bcrypt y devuelve un <strong>JWT</strong> firmado con <code>SECRET_KEY</code> (HS256), válido 8 horas por defecto.</li>
+        <li>El cliente manda ese token en cada request: <code>Authorization: Bearer &lt;token&gt;</code>.</li>
+      </ol>
+      <div class="nota nota--limite">
+        <span class="nota__label">La confusión más común</span>
+        <p>
+          El campo se llama <code>username</code>, pero espera el
+          <strong>email</strong>, no el nombre del usuario. El síntoma de
+          equivocarse es un <code>401</code> idéntico al de contraseña
+          incorrecta. El <code>summary</code> del endpoint lo aclara en
+          <code>/docs</code>.
+        </p>
+      </div>
+      <p>
+        El email se normaliza a minúsculas al registrar <strong>y al
+        buscar</strong>, así <code>Juan@x.com</code> y <code>juan@x.com</code> son
+        el mismo usuario, y registrar <code>DUP@x.com</code> cuando ya existe
+        <code>dup@x.com</code> da <code>409</code> en lugar de crear dos cuentas.
+      </p>
+
+      <h3>Los tres roles</h3>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Rol</th><th class="c">Leer</th><th class="c">Cargar cuentas y asientos</th><th class="c">Cerrar ejercicio</th><th class="c">Administrar usuarios</th></tr></thead>
+          <tbody>
+            <tr><td><strong>admin</strong></td><td class="c">Sí</td><td class="c">Sí</td><td class="c">Sí</td><td class="c">Sí</td></tr>
+            <tr><td><strong>contador</strong></td><td class="c">Sí</td><td class="c">Sí</td><td class="c">—</td><td class="c">—</td></tr>
+            <tr><td><strong>lector</strong></td><td class="c">Sí</td><td class="c">—</td><td class="c">—</td><td class="c">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre><code>ROLES_ESCRITURA = (RolUsuario.ADMIN, RolUsuario.CONTADOR)
+
+requiere_escritura = requiere_rol(ROLES_ESCRITURA)    # cuentas, asientos
+requiere_admin     = requiere_rol([RolUsuario.ADMIN])  # cierres, usuarios</code></pre>
+      <p>
+        Un usuario autenticado pero sin permiso recibe <strong><code>403</code></strong>,
+        no <code>401</code>: son cosas distintas y conviene distinguirlas («no
+        iniciaste sesión» y «tu rol no alcanza»).
+      </p>
+
+      <h3>El arranque del sistema</h3>
+      <p>
+        Hay un problema circular: crear usuarios requiere ser admin, pero al
+        principio no hay ningún usuario.
+      </p>
+      <pre><code>es_bootstrap = crud.usuario.sistema_sin_usuarios(db)
+...
+# En el bootstrap se ignora el rol pedido: si el primer usuario pudiera
+# crearse como 'lector', el sistema quedaría sin ningún admin y sin
+# forma de crear uno.
+rol = RolUsuario.ADMIN if es_bootstrap else usuario_in.rol</code></pre>
+      <p>
+        Mientras no exista ningún usuario, <code>/auth/registrar</code> es público
+        y crea un <strong>admin</strong>, incluso si se pide otro rol. Desde el
+        segundo usuario, exige un admin autenticado.
+      </p>
+
+      <h3>El sistema nunca se queda sin admin</h3>
+      <p>
+        Está garantizado sin necesidad de contar admins:
+        <code>requiere_admin</code> asegura que quien ejecuta la acción es un
+        admin activo, y un admin <strong>no puede degradarse, desactivarse ni
+        eliminarse a sí mismo</strong>. Como el objetivo siempre es otro usuario,
+        después de cualquier operación queda en pie al menos quien la ejecutó.
+      </p>
+      <p>
+        Importa porque no habría forma de recuperarse: sin admins nadie puede
+        crear usuarios, y el registro público solo se reabre si no queda
+        <strong>ningún</strong> usuario.
+      </p>
+
+      <h3>Borrar o desactivar</h3>
+      <p>
+        Un usuario con asientos o cierres a su nombre <strong>no se puede
+        borrar</strong> (<code>409</code>): se perdería la trazabilidad de quién
+        cargó qué. En ese caso se lo <strong>desactiva</strong>: no puede entrar
+        más, pero su historial queda intacto.
+      </p>
+
+      <h3>Los dos esquemas de <code>/docs</code></h3>
+      <p>El botón <strong>Authorize</strong> ofrece dos formas, ambas sobre el mismo header:</p>
+      <ul>
+        <li><strong>OAuth2PasswordBearer</strong> — email y contraseña; Swagger hace el login solo.</li>
+        <li><strong>HTTPBearer</strong> — pegar un token ya obtenido, sin re-tipear credenciales.</li>
+      </ul>
+      <p>
+        Los dos se declaran con <code>auto_error=False</code> para que fallar uno
+        no corte la petición que el otro resolvió; el <code>401</code> lo emite
+        <code>get_current_user</code>.
+      </p>
+
+      <h3><code>SECRET_KEY</code> en producción</h3>
+      <div class="nota nota--limite">
+        <span class="nota__label">Seguridad</span>
+        <p>
+          El valor por defecto <strong>está publicado en el repositorio</strong>:
+          sirve para desarrollo, pero con él cualquiera que haya visto el código
+          podría firmarse un token de admin. Por eso, con
+          <code>ENTORNO=produccion</code> la app <strong>se niega a
+          arrancar</strong> si <code>SECRET_KEY</code> sigue siendo el de ejemplo.
+        </p>
+        <pre><code>ENTORNO=produccion SECRET_KEY=$(openssl rand -hex 32) docker compose up -d</code></pre>
+        <p>Es preferible que el proceso no levante a que levante inseguro y nadie lo note.</p>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section id="s10">
+      <h2><span class="num">10</span> La interfaz web</h2>
+      <p>React 19 y Vite, en <code>frontend/</code>.</p>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Ruta</th><th>Archivo</th><th>Qué hace</th></tr></thead>
+          <tbody>
+            <tr><td><code>/cuentas</code></td><td><code>PlanCuentas.jsx</code></td><td>Árbol del plan de cuentas; alta, edición y baja</td></tr>
+            <tr><td><code>/libro-mayor/:cuentaId</code></td><td><code>LibroMayor.jsx</code></td><td>Movimientos de una cuenta con saldo corriente</td></tr>
+            <tr><td><code>/asientos</code></td><td><code>Asientos.jsx</code></td><td>Listado con filtros, reversión y borrado</td></tr>
+            <tr><td>—</td><td><code>AsientoNuevo.jsx</code></td><td>Formulario de carga con validación en vivo</td></tr>
+            <tr><td><code>/balance-comprobacion</code></td><td><code>BalanceComprobacion.jsx</code></td><td>Reporte y descarga CSV</td></tr>
+            <tr><td><code>/estado-resultados</code></td><td><code>EstadoResultados.jsx</code></td><td>Reporte y descarga CSV</td></tr>
+            <tr><td><code>/balance-general</code></td><td><code>BalanceGeneral.jsx</code></td><td>Reporte y descarga CSV</td></tr>
+            <tr><td><code>/cierres</code></td><td><code>Cierres.jsx</code></td><td>Historial y ejecución del cierre</td></tr>
+            <tr><td><code>/usuarios</code></td><td><code>Usuarios.jsx</code></td><td>Administración de usuarios, solo admin</td></tr>
+            <tr><td>—</td><td><code>Login.jsx</code></td><td>Pantalla de ingreso</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>El cliente de API</h3>
+      <p><code>frontend/src/api/client.js</code> centraliza todas las llamadas:</p>
+      <ul>
+        <li>Agrega el header <code>Authorization</code> si hay token guardado.</li>
+        <li><strong>Maneja el 401 en un solo lugar:</strong> borra el token y avisa a la app para que cierre la sesión, en vez de que cada pantalla tenga que manejarlo.</li>
+        <li>Traduce los errores <code>422</code> de FastAPI, que vienen como lista de errores de validación, a un mensaje legible.</li>
+        <li>Descarta de la <em>query string</em> los parámetros vacíos, nulos o indefinidos.</li>
+      </ul>
+      <p>
+        <strong>La descarga de CSV no puede ser un <code>&lt;a href&gt;</code>
+        común:</strong> la API exige el header <code>Authorization</code>, que el
+        navegador no manda en una navegación normal — daría 401. Se pide con
+        <code>fetch</code> y se dispara la descarga desde un <em>blob</em>.
+      </p>
+
+      <h3>Validación en vivo al cargar asientos</h3>
+      <p>
+        <code>AsientoNuevo.jsx</code> valida antes de enviar, replicando las
+        reglas del backend: muestra si el asiento está balanceado o la diferencia
+        que falta, impide que una línea tenga débito y crédito a la vez —
+        escribir en uno limpia el otro — y mantiene el botón deshabilitado hasta
+        que todo esté correcto. Los montos se comparan <strong>en centavos</strong>:
+      </p>
+      <pre><code>// Los montos se comparan en centavos (enteros) y no en float: sumar 0.1 + 0.2
+// en punto flotante da 0.30000000000000004, y un asiento perfectamente
+// balanceado podría marcarse como descuadrado.
+function aCentavos(valor) { ... Math.round(numero * 100) }</code></pre>
+
+      <h3>Sin CORS</h3>
+      <p>
+        El cliente arma las URLs con <code>window.location.origin</code>, o sea
+        que llama al mismo origen desde el que se sirvió la página. Por eso no hay
+        configuración de CORS en ningún lado:
+      </p>
+      <ul>
+        <li><strong>En desarrollo:</strong> el dev server de Vite proxea <code>/api</code> y <code>/health</code> al backend.</li>
+        <li><strong>En producción:</strong> FastAPI sirve el bundle compilado, así que es literalmente el mismo origen.</li>
+      </ul>
+
+      <h3>El fallback de la SPA</h3>
+      <p>
+        Como el ruteo es del lado del cliente (<code>BrowserRouter</code>), al
+        recargar <code>/asientos</code> el backend tiene que devolver el
+        <code>index.html</code> y dejar que React resuelva la ruta. Está en
+        <code>app/main.py</code>, con dos precauciones:
+      </p>
+      <pre><code># Sin este corte, una ruta /api inexistente devolvería el index.html
+# con 200 en vez de un 404, y el cliente recibiría HTML donde espera
+# JSON — un error mucho más difícil de diagnosticar.
+if ruta.startswith("api/"):
+    raise HTTPException(status_code=404, detail="Not Found")
+
+archivo = (FRONTEND_DIST / ruta).resolve()
+# is_relative_to corta el path traversal (?ruta=../../etc/passwd).
+if ruta and archivo.is_file() and archivo.is_relative_to(FRONTEND_DIST):
+    return FileResponse(archivo)</code></pre>
+      <p>
+        Si no existe el bundle — desarrollo con Vite, o CI que solo corre el
+        backend — la app funciona igual, sin servir la interfaz.
+      </p>
+    </section>
+
+    <!-- 11 -->
+    <section id="s11">
+      <h2><span class="num">11</span> Tests</h2>
+      <p>
+        <strong>102 tests de backend</strong> (pytest) y <strong>20 de
+        frontend</strong> (Vitest), todos en CI. Son 100 funciones
+        <code>def test_</code>; pytest reporta 102 porque una está parametrizada
+        con tres casos.
+      </p>
+
+      <h3>Backend</h3>
+      <p>
+        Corren contra <strong>SQLite en memoria</strong>, sin necesidad de Docker
+        ni PostgreSQL levantado, usando un <code>TestClient</code> de FastAPI con
+        <code>get_db</code> sobrescrito por sesión de test: cada test parte de una
+        base vacía.
+      </p>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Archivo</th><th class="n">Tests</th><th>Qué cubre</th></tr></thead>
+          <tbody>
+            <tr><td><code>test_asientos.py</code></td><td class="n">19</td><td>Partida doble, cuentas sumarias e inactivas, numeración, reversión completa, filtros y paginación</td></tr>
+            <tr><td><code>test_roles.py</code></td><td class="n">14</td><td>El primer usuario es admin aunque pida otro rol, el registro se cierra, y qué puede hacer cada rol</td></tr>
+            <tr><td><code>test_auth.py</code></td><td class="n">13</td><td>Registro y login, email insensible a mayúsculas, los dos esquemas de <code>/docs</code></td></tr>
+            <tr><td><code>test_cierre.py</code></td><td class="n">12</td><td>Que el balance siga cuadrando después de cerrar, que el estado de resultados siga mostrando el período, segundo cierre, pérdida y utilidad cero</td></tr>
+            <tr><td><code>test_usuarios.py</code></td><td class="n">9</td><td>Administración, bloqueo de auto-modificación, borrado con historial</td></tr>
+            <tr><td><code>test_cuentas.py</code></td><td class="n">7</td><td>Jerarquía, auto-marcado de sumaria, bloqueos de borrado</td></tr>
+            <tr><td><code>test_libro_mayor.py</code></td><td class="n">6</td><td>Saldo corriente según naturaleza, saldo inicial</td></tr>
+            <tr><td><code>test_spa.py</code></td><td class="n">5</td><td>Servido del bundle, fallback, 404 de <code>/api</code>, path traversal</td></tr>
+            <tr><td><code>test_balance_comprobacion.py</code></td><td class="n">4</td><td>Cuentas sin movimientos, <code>balanceado</code>, el cero negativo</td></tr>
+            <tr><td><code>test_estado_resultados.py</code></td><td class="n">4</td><td>Utilidad bruta y neta, omisión de cuentas sin actividad</td></tr>
+            <tr><td><code>test_config.py</code></td><td class="n">4</td><td>Que producción rechace la <code>SECRET_KEY</code> de ejemplo</td></tr>
+            <tr><td><code>test_balance_general.py</code></td><td class="n">3</td><td>Escenario completo donde activo = pasivo + patrimonio</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Frontend</h3>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Archivo</th><th>Qué cubre</th></tr></thead>
+          <tbody>
+            <tr><td><code>client.test.js</code></td><td>Header <code>Authorization</code>, login como formulario, el 401 que cierra sesión, mensajes de error 422, descarte de params vacíos</td></tr>
+            <tr><td><code>AsientoNuevo.test.jsx</code></td><td>Detección de balance, exclusión débito/crédito, que no descuadre por <code>0.1 + 0.2</code>, que solo viajen las líneas con datos</td></tr>
+            <tr><td><code>Login.test.jsx</code></td><td>Login exitoso guardando el token, error sin dejar la sesión a medias</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="nota nota--limite">
+        <span class="nota__label">Requiere Node 22+</span>
+        <p>
+          jsdom 30 usa APIs de undici que no existen en Node 20
+          (<code>webidl.util.markAsUncloneable</code>) y los tests no arrancan;
+          está declarado en <code>engines</code> de <code>package.json</code>.
+        </p>
+        <p>
+          Además, <code>src/test/setup.js</code> instala un
+          <strong><code>localStorage</code> propio en memoria</strong> en lugar de
+          usar el de jsdom. Node 26 expone un <code>localStorage</code> nativo
+          experimental que queda deshabilitado sin
+          <code>--localstorage-file</code> y termina tapando al de jsdom. Sin esta
+          implementación propia, los tests pasarían en CI (Node 22) y fallarían en
+          una máquina con Node 26.
+        </p>
+      </div>
+    </section>
+
+    <!-- 12 -->
+    <section id="s12">
+      <h2><span class="num">12</span> Infraestructura: Docker, migraciones y CI</h2>
+      <h3>Migraciones</h3>
+      <p>Siete migraciones de Alembic, aplicadas en orden por el contenedor al arrancar:</p>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Revisión</th><th>Qué hace</th></tr></thead>
+          <tbody>
+            <tr><td><code>0001</code></td><td>Crea <code>cuentas</code></td></tr>
+            <tr><td><code>0002</code></td><td>Crea <code>asientos</code> y <code>movimientos_contables</code></td></tr>
+            <tr><td><code>0003</code></td><td>Agrega <code>reversa_de_id</code> a <code>asientos</code> (reversión)</td></tr>
+            <tr><td><code>0004</code></td><td>Crea <code>usuarios</code></td></tr>
+            <tr><td><code>0005</code></td><td>Agrega <code>usuario_id</code> a <code>asientos</code> (auditoría)</td></tr>
+            <tr><td><code>0006</code></td><td>Agrega <code>rol</code> a <code>usuarios</code></td></tr>
+            <tr><td><code>0007</code></td><td>Crea <code>cierres</code> y agrega <code>es_cierre</code> a <code>asientos</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="nota nota--limite">
+        <span class="nota__label">Una trampa que dejó comentario</span>
+        <p>
+          SQLAlchemy guarda el <em>nombre</em> del miembro del enum
+          (<code>'CONTADOR'</code>), no su valor (<code>'contador'</code>).
+          Escribir el valor en minúscula inserta datos que el ORM después no puede
+          leer (<code>"'admin' is not among the defined enum values"</code>). Hay
+          un test específico que valida esos literales, porque la suite no ejecuta
+          las migraciones.
+        </p>
+        <p>
+          Esa misma migración promueve a <strong>admin</strong> a los usuarios que
+          ya existían: si quedaran como contador, nadie podría dar de alta a nadie
+          y el sistema quedaría sin administración.
+        </p>
+      </div>
+
+      <h3>Docker</h3>
+      <p>El <code>Dockerfile</code> es <strong>multi-etapa</strong>:</p>
+      <ol>
+        <li><code>node:22-slim</code> — instala dependencias y compila el frontend.</li>
+        <li><code>python:3.12-slim</code> — instala las dependencias de Python, copia el código y trae el <code>dist</code> de la etapa anterior.</li>
+      </ol>
+      <p>
+        El <code>dist</code> se toma de la etapa de build y <strong>no del
+        host</strong>, así el build no depende de que alguien haya corrido
+        <code>npm run build</code> localmente ni de que su <code>dist</code> esté
+        actualizado.
+      </p>
+      <p>
+        No hay un servicio nginx aparte: como el cliente necesita el mismo origen
+        que la API, un nginx habría significado un contenedor más y configurar
+        CORS o un proxy, sin ganar nada a esta escala.
+      </p>
+
+      <h3>CI</h3>
+      <p><code>.github/workflows/ci.yml</code>, en cada push y PR a <code>main</code>:</p>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Job</th><th>Pasos</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Backend</strong></td><td><code>pip install</code> → <code>pytest</code> sobre Python 3.12, la misma versión del Dockerfile</td></tr>
+            <tr><td><strong>Frontend</strong></td><td><code>npm ci</code> → lint (oxlint) → test (Vitest) → build, sobre Node 22</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        No hace falta levantar PostgreSQL como <em>service</em>: la suite usa
+        SQLite en memoria.
+      </p>
+    </section>
+
+    <!-- 13 -->
+    <section id="s13">
+      <h2><span class="num">13</span> Recorrido completo con datos reales</h2>
+      <p>
+        Este es el estado del sistema con los datos de demostración cargados:
+        <strong>22 asientos</strong> de un negocio chico entre enero y marzo de
+        2026.
+      </p>
+
+      <h3>Las operaciones registradas</h3>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Fecha</th><th>Operación</th><th>Débito</th><th>Crédito</th><th class="n">Importe</th></tr></thead>
+          <tbody>
+            <tr><td>02/01</td><td>Aporte de capital inicial</td><td>Caja</td><td>Capital social</td><td class="n">500.000</td></tr>
+            <tr><td>05/01</td><td>Depósito en cuenta bancaria</td><td>Banco</td><td>Caja</td><td class="n">300.000</td></tr>
+            <tr><td>10/01</td><td>Compra de mercaderías a crédito</td><td>Mercaderías</td><td>Proveedores</td><td class="n">180.000</td></tr>
+            <tr><td>15/01</td><td>Venta al contado</td><td>Caja</td><td>Ventas</td><td class="n">120.000</td></tr>
+            <tr><td>15/01</td><td>Costo de esa venta</td><td>Costo mercaderías</td><td>Mercaderías</td><td class="n">70.000</td></tr>
+            <tr><td>20/01</td><td>Venta a crédito</td><td>Cuentas por cobrar</td><td>Ventas</td><td class="n">95.000</td></tr>
+            <tr><td>20/01</td><td>Costo de esa venta</td><td>Costo mercaderías</td><td>Mercaderías</td><td class="n">55.000</td></tr>
+            <tr><td>25/01</td><td>Alquiler de enero</td><td>Alquiler</td><td>Banco</td><td class="n">45.000</td></tr>
+            <tr><td>31/01</td><td>Sueldos de enero</td><td>Sueldos</td><td>Sueldos a pagar</td><td class="n">80.000</td></tr>
+            <tr><td>05/02</td><td>Pago parcial a proveedores</td><td>Proveedores</td><td>Banco</td><td class="n">100.000</td></tr>
+            <tr><td>08/02</td><td>Compra de mercaderías a crédito</td><td>Mercaderías</td><td>Proveedores</td><td class="n">150.000</td></tr>
+            <tr><td>10/02</td><td>Cobro a cliente</td><td>Caja</td><td>Cuentas por cobrar</td><td class="n">50.000</td></tr>
+            <tr><td>15/02</td><td>Luz, agua e internet</td><td>Servicios</td><td>Caja</td><td class="n">12.000</td></tr>
+            <tr><td>18/02</td><td><strong>Venta cargada por error</strong></td><td>Caja</td><td>Ventas</td><td class="n">99.999</td></tr>
+            <tr><td>19/02</td><td><strong>Reversión del error</strong></td><td>Ventas</td><td>Caja</td><td class="n">99.999</td></tr>
+            <tr><td>02/03</td><td>Compra de mercaderías al contado</td><td>Mercaderías</td><td>Caja</td><td class="n">120.000</td></tr>
+            <tr><td>05/03</td><td>Venta al contado</td><td>Caja</td><td>Ventas</td><td class="n">190.000</td></tr>
+            <tr><td>05/03</td><td>Costo de esa venta</td><td>Costo mercaderías</td><td>Mercaderías</td><td class="n">98.000</td></tr>
+            <tr><td>12/03</td><td>Venta a crédito</td><td>Cuentas por cobrar</td><td>Ventas</td><td class="n">145.000</td></tr>
+            <tr><td>12/03</td><td>Costo de esa venta</td><td>Costo mercaderías</td><td>Mercaderías</td><td class="n">72.000</td></tr>
+            <tr><td>20/03</td><td>Pago de sueldos de enero</td><td>Sueldos a pagar</td><td>Banco</td><td class="n">80.000</td></tr>
+            <tr><td>25/03</td><td>Alquiler de marzo</td><td>Alquiler</td><td>Caja</td><td class="n">45.000</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="nota">
+        <span class="nota__label">Auditoría en acción</span>
+        <p>
+          Notá el par 18/02 y 19/02: el asiento erróneo <strong>no se borró ni se
+          editó</strong>. Se generó una reversión con los importes invertidos, y
+          los dos quedan visibles en el libro mayor. Se ve el error <em>y</em> su
+          corrección.
+        </p>
+      </div>
+
+      <h3>Estado de resultados del período</h3>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Concepto</th><th class="n">Importe</th></tr></thead>
+          <tbody>
+            <tr><td>Ventas</td><td class="n">550.000</td></tr>
+            <tr class="total"><td>Total ingresos</td><td class="n">550.000</td></tr>
+            <tr><td>Costo de mercaderías vendidas</td><td class="n">295.000</td></tr>
+            <tr class="total"><td>Utilidad bruta</td><td class="n">255.000</td></tr>
+            <tr><td>Sueldos</td><td class="n">80.000</td></tr>
+            <tr><td>Alquiler</td><td class="n">90.000</td></tr>
+            <tr><td>Servicios</td><td class="n">12.000</td></tr>
+            <tr class="total"><td>Total gastos</td><td class="n">182.000</td></tr>
+            <tr class="total"><td>Utilidad neta</td><td class="n">73.000</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Los 550.000 de ventas son 120.000 + 95.000 + 190.000 + 145.000. La venta
+        errónea de 99.999 <strong>no aparece</strong>: su reversión la cancela
+        exactamente.
+      </p>
+
+      <h3>Balance general</h3>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Activo</th><th class="n">Importe</th><th>Pasivo y Patrimonio</th><th class="n">Importe</th></tr></thead>
+          <tbody>
+            <tr><td>Caja</td><td class="n">383.000</td><td>Proveedores</td><td class="n">230.000</td></tr>
+            <tr><td>Banco</td><td class="n">75.000</td><td>Sueldos a pagar</td><td class="n">0</td></tr>
+            <tr><td>Cuentas por cobrar</td><td class="n">190.000</td><td><strong>Total pasivo</strong></td><td class="n"><strong>230.000</strong></td></tr>
+            <tr><td>Mercaderías</td><td class="n">155.000</td><td>Capital social</td><td class="n">500.000</td></tr>
+            <tr><td></td><td class="n"></td><td>Resultado acumulado</td><td class="n">73.000</td></tr>
+            <tr><td></td><td class="n"></td><td><strong>Total patrimonio</strong></td><td class="n"><strong>573.000</strong></td></tr>
+            <tr class="total"><td>Total activo</td><td class="n">803.000</td><td>Total pasivo + patrimonio</td><td class="n">803.000</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><code>balanceado: true</code> — la ecuación fundamental se cumple.</p>
+      <p>
+        Fijate en <strong>Resultado acumulado: 73.000</strong>. No es una cuenta
+        del plan: es el resultado de las cuentas nominales, calculado en vivo,
+        porque el ejercicio todavía no se cerró. Coincide exactamente con la
+        utilidad neta del estado de resultados. Si se cerrara el ejercicio contra
+        Capital social, esa línea pasaría a 0 y Capital social pasaría a 573.000
+        — el total no cambia.
+      </p>
+      <div class="nota">
+        <span class="nota__label">Un detalle contable</span>
+        <p>
+          Las compras de mercadería (180.000 + 150.000 + 120.000 = 450.000)
+          <strong>no afectan la utilidad</strong>. Comprar stock es cambiar un
+          activo por otro, no un gasto. Lo que impacta el resultado es el
+          <strong>costo de lo vendido</strong> (295.000), registrado en asientos
+          aparte al momento de cada venta. La diferencia, 155.000, es el stock que
+          quedó en el activo.
+        </p>
+      </div>
+    </section>
+
+    <!-- 14 -->
+    <section id="s14">
+      <h2><span class="num">14</span> Decisiones de diseño</h2>
+      <p>Las decisiones no obvias, con su motivo.</p>
+
+      <h3>Los asientos no se editan: se reversan</h3>
+      <p>
+        No hay <code>PATCH /asientos</code>. Un asiento mal cargado se corrige con
+        un contra-asiento que invierte débitos y créditos. El saldo neto vuelve a
+        cero, pero <strong>los dos movimientos quedan visibles</strong> en el
+        libro mayor: se ve el error original y su corrección, no se lo esconde. Es
+        la práctica contable estándar y da auditoría completa.
+      </p>
+      <p>
+        Reglas: un asiento se reversa <strong>una sola vez</strong>
+        (<code>409</code> si ya tiene reversión), se revalidan las cuentas
+        involucradas por si alguna se desactivó, y un asiento ya reversado
+        <strong>no se puede borrar</strong>.
+      </p>
+
+      <h3>Validación de partida doble en dos capas</h3>
+      <ol>
+        <li><strong>En el esquema Pydantic</strong> (<code>AsientoCreate</code>): mínimo 2 movimientos, cada uno con débito <em>o</em> crédito, y <code>sum(débitos) == sum(créditos)</code>. Devuelve <code>422</code> con un mensaje claro.</li>
+        <li><strong>En la base de datos</strong> (<code>CHECK</code>): montos no negativos, no ambos lados en una línea, al menos uno mayor a cero.</li>
+      </ol>
+      <p>La segunda capa es defensa ante escrituras que no pasen por la API.</p>
+
+      <h3><code>Decimal</code> y el cero negativo</h3>
+      <p>
+        <code>Decimal</code> conserva el signo al multiplicar por −1:
+        <code>-1 * Decimal("0")</code> da <code>Decimal("-0")</code>. Eso hacía
+        que una cuenta acreedora con saldo neto cero apareciera como
+        <code>"-0"</code> en los reportes. La solución:
+      </p>
+      <pre><code>def sin_cero_negativo(valor):
+    return valor + Decimal("0")   # Decimal('-0') + Decimal('0') == Decimal('0')</code></pre>
+
+      <h3>Un solo <code>GROUP BY</code> en lugar de iterar</h3>
+      <p>
+        <code>sumar_por_cuenta()</code> agrega débitos y créditos de todas las
+        cuentas con una sola consulta SQL. Se extrajo a <code>agregados.py</code>
+        cuando el mismo cálculo empezó a repetirse en el tercer y cuarto reporte.
+      </p>
+
+      <h3><code>es_cierre</code>: el mismo dato, dos lecturas</h3>
+      <p>
+        El mismo asiento de cierre se <strong>excluye</strong> del estado de
+        resultados y se <strong>incluye</strong> en el balance general. No es una
+        inconsistencia: son dos preguntas distintas — «qué pasó en el período» y
+        «cuánto hay hoy» — y cada reporte necesita lo contrario del otro. Está
+        documentado en el propio modelo para que nadie lo «arregle» por error.
+      </p>
+
+      <h3>Baja lógica, no borrado</h3>
+      <p>
+        Cuentas y usuarios tienen <code>activa</code>/<code>activo</code>. Una
+        cuenta inactiva no admite asientos nuevos pero conserva su historial; un
+        usuario inactivo no puede entrar pero sus asientos siguen atribuidos.
+        Borrar de verdad solo se permite cuando no hay historial que perder.
+      </p>
+
+      <h3>Errores del dominio como excepciones propias</h3>
+      <p>
+        El CRUD levanta <code>CuentaConHijasError</code>,
+        <code>AsientoYaReversadoError</code>, <code>PeriodoYaCerradoError</code> y
+        demás, y la capa HTTP las traduce a códigos. Así la lógica contable no
+        depende de FastAPI y se puede testear sola.
+      </p>
+    </section>
+
+    <!-- 15 -->
+    <section id="s15">
+      <h2><span class="num">15</span> Limitaciones conocidas</h2>
+      <p>Honestidad sobre lo que <strong>no</strong> está resuelto.</p>
+
+      <div class="nota nota--limite">
+        <span class="nota__label">Lo más importante</span>
+        <p>
+          <strong>No se puede cambiar la contraseña.</strong> No hay endpoint de
+          cambio ni de recuperación, y un admin tampoco puede resetearla: solo
+          puede cambiar <code>rol</code> y <code>activo</code>. Si un usuario
+          olvida su contraseña, la única salida es borrarlo y crearlo de nuevo —
+          y eso no se puede si ya cargó asientos.
+        </p>
+      </div>
+
+      <h3>Numeración de asientos bajo concurrencia</h3>
+      <p>
+        El número se calcula como <code>MAX(numero) + 1</code> dentro de la
+        transacción. Con dos escrituras simultáneas pueden colisionar: el
+        <code>UNIQUE</code> lo evita pasar silenciosamente, pero haría fallar la
+        transacción. Para producción con varios escritores conviene una secuencia
+        de base de datos o <code>SELECT … FOR UPDATE</code>.
+      </p>
+
+      <h3>Sin auxiliares por tercero</h3>
+      <p>
+        Las cuentas por cobrar y proveedores son cuentas globales: no se puede
+        saber cuánto debe <em>cada</em> cliente. Haría falta un subsistema de
+        auxiliares.
+      </p>
+
+      <h3>Un solo ejercicio, una sola empresa, una sola moneda</h3>
+      <p>
+        No hay separación por empresa, ni manejo de moneda extranjera, ni
+        ejercicios contables como entidad — el cierre es un evento con fecha, no
+        un período con apertura y cierre formales.
+      </p>
+
+      <h3>Sin backups ni deploy</h3>
+      <p>
+        No hay scripts de respaldo de la base ni configuración para ningún
+        hosting. El sistema corre en local con Docker.
+      </p>
+
+      <h3>El árbol de cuentas se arma con <em>lazy loading</em></h3>
+      <p>
+        <code>GET /cuentas/arbol</code> carga las hijas nodo por nodo a través de
+        la relación ORM. Para un plan de cuentas muy grande conviene reemplazarlo
+        por una consulta recursiva (CTE); está anotado en el código.
+      </p>
+    </section>
+
+    <footer>
+      <p>
+        Documentación generada a partir del código en <code>main</code>. Los
+        importes y saldos del recorrido salen del sistema corriendo con los datos
+        de demostración.
+      </p>
+    </footer>
+  </main>
+</div>
