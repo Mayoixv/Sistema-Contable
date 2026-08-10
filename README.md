@@ -41,14 +41,23 @@ tests/                      # Suite pytest (SQLite en memoria)
 docker compose up -d --build
 ```
 
-Levanta Postgres 16 y la API en un solo paso: `db` espera a pasar su
-healthcheck (`pg_isready`) antes de que arranque `api`, y el contenedor de
-la API corre `alembic upgrade head` automáticamente antes de `uvicorn` (ver
-`Dockerfile`, `CMD`) — no hace falta crear la base ni migrar a mano.
+Levanta el sistema completo — Postgres, la API y la interfaz web — en un
+solo paso: `db` espera a pasar su healthcheck (`pg_isready`) antes de que
+arranque `api`, y el contenedor de la API corre `alembic upgrade head`
+automáticamente antes de `uvicorn` (ver `Dockerfile`, `CMD`) — no hace
+falta crear la base ni migrar a mano.
 
-- API: `http://localhost:8001` (docs en `/docs`)
+- **Interfaz web: `http://localhost:8001`**
+- API: `http://localhost:8001/api/v1` (docs en `/docs`)
 - Postgres: `localhost:5433` (puertos 8000/5432 quedan libres para no
   chocar con otros proyectos locales)
+
+No hay un servicio `web` separado: el `Dockerfile` es multi-etapa
+(`node:20-slim` compila el frontend, `python:3.12-slim` corre la API) y la
+app sirve el bundle desde el mismo origen que la API. Un nginx aparte
+habría significado un contenedor más y configurar CORS o un proxy, sin
+ganar nada a esta escala. El `npm ci` pasa dentro de la imagen, así que el
+build no depende de que hayas corrido `npm run build` en tu máquina.
 - Los datos persisten en el volumen nombrado `contable_pgdata` entre
   reinicios; `docker compose down -v` si además querés borrarlos.
 - `SECRET_KEY` se puede sobreescribir exportándola antes del `up`
@@ -80,14 +89,25 @@ Docs interactivas: `http://localhost:8000/docs`
 
 ## Interfaz web (`frontend/`)
 
-React + Vite. En desarrollo son dos procesos: la API en `8001` y el front en
-`5173`.
+React + Vite. Para **usarla**, alcanza con `docker compose up` y entrar a
+`http://localhost:8001` (ver arriba). Lo de acá abajo es para
+**desarrollarla**, con hot-reload: son dos procesos, la API en `8001` y el
+dev server en `5173`.
 
 ```bash
 cd frontend
 npm install
 npm run dev     # http://localhost:5173
 ```
+
+En producción, en cambio, no hay dev server: FastAPI sirve el bundle
+compilado (`frontend/dist`) y cae en `index.html` para cualquier ruta que
+no sea de la API, porque el ruteo es del lado del cliente
+(`BrowserRouter`) y al recargar `/asientos` el backend tiene que devolver
+el index en vez de un 404. Las rutas bajo `/api/` quedan excluidas de ese
+fallback a propósito: si no, un endpoint mal escrito devolvería HTML con
+`200` donde el cliente espera JSON, que es un error bastante más difícil
+de diagnosticar que un `404`.
 
 **No hace falta configurar CORS.** El dev server de Vite proxea `/api` y
 `/health` al backend (ver `vite.config.js`), así que el navegador ve un solo

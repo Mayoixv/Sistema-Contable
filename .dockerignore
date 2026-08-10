@@ -3,8 +3,15 @@ venv/
 __pycache__/
 *.pyc
 .git/
+.github/
 .pytest_cache/
 .mypy_cache/
 tests/
 .env
 .claude/
+
+# Se instalan dentro de la imagen (npm ci) y se compila ahí; copiar los del
+# host rompería el build si tienen binarios de otra plataforma, y el dist
+# local podría estar desactualizado respecto del código.
+frontend/node_modules/
+frontend/dist/

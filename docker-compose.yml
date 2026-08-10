@@ -15,6 +15,9 @@ services:
       timeout: 5s
       retries: 10
 
+  # Un solo servicio sirve la API y la interfaz web: el Dockerfile compila el
+  # frontend y la app lo sirve desde el mismo origen (ver app/main.py). Así no
+  # hace falta un nginx aparte ni configurar CORS.
   api:
     build: .
     depends_on:
